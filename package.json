@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "build": "wasm-pack build --target nodejs --dev",
+    "wat": "wat2wasm test.wat",
+    "test": "yarn wat && yarn build && node -e \"require('./test')\""
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "bip39": "^2.5.0",
+    "bitcoinjs-lib": "^4.0.3"
+  }
+}
