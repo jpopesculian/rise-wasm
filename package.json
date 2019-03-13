@@ -1,8 +1,9 @@
 {
   "scripts": {
-    "build": "wasm-pack build --target nodejs --dev",
-    "wat": "wat2wasm test.wat",
-    "test": "yarn wat && yarn build && node -e \"require('./test')\""
+    "build-rust": "wasm-pack build --target nodejs --dev",
+    "build-wasm": "wat2wasm test.wat",
+    "run-test": "node -e \"require('./test')\"",
+    "all": "yarn build-rust && yarn build-wasm && yarn run-test"
   },
   "devDependencies": {},
   "dependencies": {

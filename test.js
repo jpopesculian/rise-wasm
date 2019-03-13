@@ -10,6 +10,9 @@ const wallet = bip32.fromSeed(seed);
 const pubKeyHash = crypto.hash256(wallet.publicKey);
 const sig = wallet.sign(pubKeyHash);
 
+/* modify signature */
+// sig[0] = 0xff;
+
 const wasmBin = fs.readFileSync("./test.wasm");
 const args = Buffer.from(
   sig.toString("hex") + wallet.publicKey.toString("hex"),
@@ -17,4 +20,10 @@ const args = Buffer.from(
 );
 
 const { verify } = require("./pkg/rise_wasmi");
-verify(wasmBin, args);
+
+try {
+  verify(wasmBin, args);
+  console.log("Success!");
+} catch (err) {
+  console.error("Failed to verify script");
+}

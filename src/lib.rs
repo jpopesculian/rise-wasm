@@ -26,9 +26,11 @@ cfg_if! {
 
 #[wasm_bindgen]
 pub fn verify(wasm_binary: &[u8], args: &[u8]) {
+    // load and validate wasm
     let module = wasmi::Module::from_buffer(&wasm_binary)
         .expect("failed to load wasm");
 
+    // define imports
     let globals_resolver = import_globals::ImportGlobalsResolver::new(args.len() as i32);
     let mem_resolver = import_memory::ImportMemoryResolver::new(args);
     let funcs_resolver = import_funcs::ImportFuncsResolver::new();
@@ -37,14 +39,17 @@ pub fn verify(wasm_binary: &[u8], args: &[u8]) {
         .with_resolver("memory", &mem_resolver)
         .with_resolver("globals", &globals_resolver);
 
+    // build module instance
     let instance =  ModuleInstance::new(&module, &imports)
         .expect("failed to instantiate wasm module")
         .assert_no_start();
 
+    // set state
     let mut state = import_funcs::ImportFuncs::new(&mem_resolver);
 
+    // call function and throw error if not equal to 1
     assert_eq!(
-        instance.invoke_export("test", &[], &mut state)
+        instance.invoke_export("main", &[], &mut state)
             .expect("failed to execute export"),
         Some(RuntimeValue::I32(1))
     )
