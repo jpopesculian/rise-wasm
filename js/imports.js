@@ -8,6 +8,9 @@ module.exports = {
   minus: (x, y) => {
     return x - y;
   },
+  log: x => {
+    console.log(x);
+  },
   look: bytes => {
     console.log(decode(bytes));
   },

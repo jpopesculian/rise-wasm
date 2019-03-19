@@ -19,11 +19,11 @@ const args = Buffer.from(
   "utf8"
 );
 
-const { verify } = require("./pkg/rise_wasmi");
+const { verify } = require("./pkg/rise_wasm");
 
-try {
-  verify(wasmBin, args);
-  console.log("Success!");
-} catch (err) {
-  console.error("Failed to verify script");
-}
+// try {
+verify(wasmBin, args);
+// console.log("Success!");
+// } catch (err) {
+// console.error("Failed to verify script");
+// }
