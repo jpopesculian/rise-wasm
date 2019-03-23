@@ -22,7 +22,9 @@ const args = Buffer.from(
 const { verify } = require("./pkg/rise_wasm");
 
 // try {
-verify(wasmBin, args);
+verify(wasmBin, {
+  args: [sig.toString("hex"), wallet.publicKey.toString("hex")]
+});
 // console.log("Success!");
 // } catch (err) {
 // console.error("Failed to verify script");

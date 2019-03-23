@@ -8,24 +8,21 @@ module.exports = {
   minus: (x, y) => {
     return x - y;
   },
-  log: x => {
-    console.log(x);
-  },
   look: bytes => {
     console.log(decode(bytes));
   },
   hash160: bytes => {
-    console.log(`hashing: <${decode(bytes).toString("hex")}>`);
-    return crypto.hash160(decode(bytes)).toString("hex");
+    console.log(`hashing: <${Buffer.from(bytes).toString("hex")}>`);
+    return crypto.hash160(Buffer.from(bytes));
   },
-  compare: (bytes1, bytes2) => {
+  compare: (left, right) => {
     console.log(
-      `comparing: <${decode(bytes1).toString("hex")}> <${decode(
-        bytes2
+      `comparing: <${Buffer.from(left).toString("hex")}> <${Buffer.from(
+        right
       ).toString("hex")}>`
     );
-    for (let i = 0; i < bytes1.length; i++) {
-      if (bytes1[i] !== bytes2[i]) {
+    for (let i = 0; i < left.length; i++) {
+      if (left[i] !== right[i]) {
         return 0;
       }
       return 1;

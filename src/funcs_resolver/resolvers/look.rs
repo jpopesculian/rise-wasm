@@ -20,11 +20,16 @@ impl<T: ResolverTarget> FuncResolver<T> for LookResolver {
         let len: u32 = args.nth_checked(1)?;
         look(
             &target
+                .stack()
                 .memory()
                 .get(offset, len as usize)
                 .expect("could not get memory"),
         );
         Ok(None)
+    }
+
+    fn gas(&self) -> u64 {
+        10
     }
 }
 

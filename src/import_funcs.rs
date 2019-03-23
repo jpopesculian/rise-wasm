@@ -1,10 +1,11 @@
 use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
+use super::StackBasedMemory;
 use alloc::prelude::*;
 use alloc::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasmi::{
-    Error, Externals, FuncInstance, FuncRef, MemoryRef, ModuleImportResolver, RuntimeArgs,
-    RuntimeValue, Signature, Trap,
+    Error, Externals, FuncInstance, FuncRef, ModuleImportResolver, RuntimeArgs, RuntimeValue,
+    Signature, Trap,
 };
 
 #[wasm_bindgen(module = "../js/imports")]
@@ -13,7 +14,7 @@ extern "C" {
 }
 
 pub struct ImportFuncs {
-    memory: MemoryRef,
+    stack: StackBasedMemory,
     resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>,
 }
 
@@ -28,14 +29,17 @@ impl Externals for ImportFuncs {
 }
 
 impl ImportFuncs {
-    pub fn new(resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>, memory: MemoryRef) -> ImportFuncs {
-        ImportFuncs { resolvers, memory }
+    pub fn new(
+        resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>,
+        stack: StackBasedMemory,
+    ) -> ImportFuncs {
+        ImportFuncs { resolvers, stack }
     }
 }
 
 impl ResolverTarget for ImportFuncs {
-    fn memory(&self) -> MemoryRef {
-        self.memory.clone()
+    fn stack(&self) -> StackBasedMemory {
+        self.stack.clone()
     }
 }
 

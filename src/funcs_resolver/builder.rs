@@ -51,6 +51,12 @@ impl<T: ResolverTarget> FuncsResolverBuilder<T> {
             .expect("Index should resolve to a function resolver")
             .run(target, args)
     }
+
+    pub fn gas(&self, index: usize) -> u64 {
+        self.get_resolver(index)
+            .expect("Index should resolve to a function resolver")
+            .gas()
+    }
 }
 
 pub trait FuncResolverBuild<T> {

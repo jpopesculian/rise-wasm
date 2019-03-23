@@ -1,15 +1,11 @@
 use alloc::string::String;
-use wasmi::{
-    Error, GlobalDescriptor, GlobalInstance, GlobalRef, ModuleImportResolver, RuntimeValue,
-};
+use wasmi::{Error, GlobalDescriptor, GlobalRef, ModuleImportResolver};
 
-pub struct ImportGlobalsResolver {
-    start_index: i32,
-}
+pub struct ImportGlobalsResolver {}
 
 impl<'a> ImportGlobalsResolver {
-    pub fn new(start_index: i32) -> ImportGlobalsResolver {
-        ImportGlobalsResolver { start_index }
+    pub fn new() -> ImportGlobalsResolver {
+        ImportGlobalsResolver {}
     }
 }
 
@@ -20,7 +16,6 @@ impl<'a> ModuleImportResolver for ImportGlobalsResolver {
         _descriptor: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
         let global_ref = match field_name {
-            "start_index" => GlobalInstance::alloc(RuntimeValue::I32(self.start_index), false),
             _ => {
                 return Err(Error::Function(String::from(
                     "host module doesn't export global with name",

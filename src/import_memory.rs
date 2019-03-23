@@ -1,23 +1,13 @@
 use alloc::string::String;
-use wasmi::memory_units::Pages;
-use wasmi::{Error, MemoryDescriptor, MemoryInstance, MemoryRef, ModuleImportResolver};
+use wasmi::{Error, MemoryDescriptor, MemoryRef, ModuleImportResolver};
 
 pub struct ImportMemoryResolver {
     pub memory: MemoryRef,
 }
 
 impl<'a> ImportMemoryResolver {
-    pub fn new(args: &[u8]) -> ImportMemoryResolver {
-        ImportMemoryResolver {
-            memory: ImportMemoryResolver::build_memory(args),
-        }
-    }
-
-    fn build_memory(args: &[u8]) -> MemoryRef {
-        let mem_ref = MemoryInstance::alloc(Pages(1), Some(Pages(1)))
-            .expect("Memory could not be initialized");
-        mem_ref.set(0, args).expect("Couldn't set memory");
-        mem_ref
+    pub fn new(memory: MemoryRef) -> ImportMemoryResolver {
+        ImportMemoryResolver { memory }
     }
 }
 

@@ -20,15 +20,21 @@ impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
         let start_pubkey: u32 = args.nth_checked(1)?;
 
         let sig = target
+            .stack()
             .memory()
             .get(start_sig, 128)
             .expect("could not get memory");
         let pubkey = target
+            .stack()
             .memory()
             .get(start_pubkey, 66)
             .expect("could not get memory");
 
         Ok(Some(RuntimeValue::I32(verify_sig(&sig, &pubkey))))
+    }
+
+    fn gas(&self) -> u64 {
+        10
     }
 }
 
