@@ -14,18 +14,15 @@ const sig = wallet.sign(pubKeyHash);
 // sig[0] = 0xff;
 
 const wasmBin = fs.readFileSync("./test.wasm");
-const args = Buffer.from(
-  sig.toString("hex") + wallet.publicKey.toString("hex"),
-  "utf8"
-);
 
 const { verify } = require("./pkg/rise_wasm");
 
-// try {
-verify(wasmBin, {
-  args: [sig.toString("hex"), wallet.publicKey.toString("hex")]
-});
-// console.log("Success!");
-// } catch (err) {
-// console.error("Failed to verify script");
-// }
+try {
+  verify(wasmBin, {
+    name: "main",
+    args: [sig, wallet.publicKey]
+  });
+  console.log("Success!");
+} catch (err) {
+  console.error("Failed to verify script");
+}

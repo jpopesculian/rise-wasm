@@ -2,10 +2,15 @@
   "scripts": {
     "build-rust": "wasm-pack build --target nodejs --dev",
     "build-wasm": "wat2wasm test.wat",
+    "build-ts": "tsc",
+    "build": "yarn build-rust && yarn build-wasm && yarn build-ts",
     "run-test": "node -e \"require('./test')\"",
-    "all": "yarn build-rust && yarn build-wasm && yarn run-test"
+    "all": "yarn build && yarn run-test"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/bip39": "^2.4.2",
+    "@types/bitcoinjs-lib": "^4.0.1"
+  },
   "dependencies": {
     "bip39": "^2.5.0",
     "bitcoinjs-lib": "^4.0.3"

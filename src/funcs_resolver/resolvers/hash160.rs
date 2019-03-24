@@ -1,26 +1,12 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::log;
+use crate::utils::{js_buffer::JsBuffer, map_trap::MapTrap};
 use alloc::prelude::*;
-use core::ops::Deref;
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind};
 
-#[wasm_bindgen(module = "../js/imports")]
+#[wasm_bindgen(module = "./imports")]
 extern "C" {
     fn hash160(bytes: &[u8]) -> JsValue;
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Buffer {
-    data: Vec<u8>,
-}
-
-impl Deref for Buffer {
-    type Target = Vec<u8>;
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
 }
 
 pub struct Hash160Resolver;
@@ -30,17 +16,13 @@ impl<T: ResolverTarget> FuncResolver<T> for Hash160Resolver {
         Signature::new(&[][..], None)
     }
 
-    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
-        let value = stack
-            .pop()
-            .ok_or(Trap::new(TrapKind::MemoryAccessOutOfBounds))?;
-        let hash: Buffer = hash160(&value)
+        let value = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
+        let hash: JsBuffer = hash160(&value)
             .into_serde()
-            .map_err(|err| Trap::new(TrapKind::Unreachable))?;
-        stack
-            .push(hash.to_vec())
-            .map_err(|_| Trap::new(TrapKind::Unreachable))?;
+            .map_trap(TrapKind::Unreachable)?;
+        stack.push(hash.to_vec()).map_trap(TrapKind::Unreachable)?;
         Ok(None)
     }
 

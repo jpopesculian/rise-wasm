@@ -27,34 +27,12 @@ pub mod utils;
 
 use funcs_resolver::build_funcs_resolver;
 use stack_based_memory::StackBasedMemory;
-
-cfg_if! {
-    if #[cfg(feature = "wee_alloc")] {
-        extern crate wee_alloc;
-        #[global_allocator]
-        static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-    }
-}
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Arg(#[serde(with = "hex_serde")] Vec<u8>);
-
-impl Deref for Arg {
-    type Target = Vec<u8>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+use utils::js_buffer::JsBuffer;
 
 #[derive(Serialize, Deserialize)]
 pub struct Options {
-    args: Vec<Arg>,
+    name: String,
+    args: Vec<JsBuffer>,
 }
 
 #[wasm_bindgen]
@@ -84,21 +62,17 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
         .with_resolver("memory", &mem_resolver)
         .with_resolver("globals", &globals_resolver);
 
-    // log(mem_resolver.memory.clone().used_size().0);
-
     // build module instance
     let instance = ModuleInstance::new(&module, &imports)
         .expect("failed to instantiate wasm module")
         .assert_no_start();
-
-    // log(mem_resolver.memory.clone().used_size().0);
 
     let mut externals = import_funcs::ImportFuncs::new(resolvers.clone(), stack.clone());
 
     // call function and throw error if not equal to 1
     assert_eq!(
         instance
-            .invoke_export("main", &[], &mut externals)
+            .invoke_export(&options.name, &[], &mut externals)
             .expect("failed to execute export"),
         Some(RuntimeValue::I32(1))
     );

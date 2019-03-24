@@ -1,11 +1,12 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
 
-#[wasm_bindgen(module = "../js/imports")]
+#[wasm_bindgen(module = "./imports")]
 extern "C" {
-    fn compare(bytes1: &[u8], bytes2: &[u8]) -> i32;
+    fn compare(bytes1: &[u8], bytes2: &[u8]) -> bool;
 }
 
 pub struct CompareResolver;
@@ -17,13 +18,10 @@ impl<T: ResolverTarget> FuncResolver<T> for CompareResolver {
 
     fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
-        let left = stack
-            .pop()
-            .ok_or(Trap::new(TrapKind::MemoryAccessOutOfBounds))?;
-        let right = stack
-            .pop()
-            .ok_or(Trap::new(TrapKind::MemoryAccessOutOfBounds))?;
-        Ok(Some(RuntimeValue::I32(compare(&left, &right))))
+        let left = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
+        let right = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
+        let is_equal = compare(&left, &right);
+        Ok(Some(RuntimeValue::I32(if is_equal { 1 } else { 0 })))
     }
 
     fn gas(&self) -> u64 {

@@ -1,11 +1,11 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
-use hex;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
 
-pub struct HexMemToStackResolver;
+pub struct MemToStackResolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for HexMemToStackResolver {
+impl<T: ResolverTarget> FuncResolver<T> for MemToStackResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
@@ -20,16 +20,14 @@ impl<T: ResolverTarget> FuncResolver<T> for HexMemToStackResolver {
         let offset: u32 = args.nth_checked(0)?;
         let size: u32 = args.nth_checked(1)?;
         let stack = target.stack();
-        let value = stack
+        let bytes = stack
             .memory()
             .get(offset, size as usize)
-            .map_err(|_| Trap::new(TrapKind::MemoryAccessOutOfBounds))?;
-        let string = String::from_utf8(value).map_err(|_| Trap::new(TrapKind::Unreachable))?;
-        let bytes = hex::decode(string).map_err(|_| Trap::new(TrapKind::Unreachable))?;
+            .map_trap(TrapKind::MemoryAccessOutOfBounds)?;
         stack
             .push(bytes)
             .map(|_| None)
-            .map_err(|_| Trap::new(TrapKind::Unreachable))
+            .map_trap(TrapKind::Unreachable)
     }
 
     fn gas(&self) -> u64 {
@@ -37,8 +35,8 @@ impl<T: ResolverTarget> FuncResolver<T> for HexMemToStackResolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for HexMemToStackResolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for MemToStackResolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(HexMemToStackResolver {})
+        Box::new(MemToStackResolver {})
     }
 }
