@@ -17,6 +17,7 @@ pub fn build_funcs_resolver<T: ResolverTarget>() -> Rc<FuncsResolverBuilder<T>> 
             .push("hex_decode", HexDecodeResolver::build())
             .push("mem_to_stack", MemToStackResolver::build())
             .push("stack_dup", StackDupResolver::build())
+            .push("stack_to_mem", StackToMemResolver::build())
             .push("verify_sig", VerifySigResolver::build()),
     )
 }

@@ -9,19 +9,19 @@
     (import "imports" "compare") (result i32))
   (func $verify_sig
     (import "imports" "verify_sig") (result i32))
-  (func $load
+  (func $store
     (import "imports" "mem_to_stack") (param i32) (param i32))
 
   (import "memory" "default" (memory 1))
   (data (i32.const 0) "2ef1eacc8cad29a27a54312731d6f3624e013e46")
 
-  (func (export "main") (result i32) (local $hash_out i32)
+  (func (export "main") (result i32)
     ;; stack: [sig, pubKey]
     (call $dup) ;; duplicate top stack arg
     ;; stack: [sig, pubKey, pubKey]
     (call $hash) ;; hash public key
     ;; stack: [sig, pubKey, hashedPubKey]
-    (call $load (i32.const 0) (i32.const 40)) ;; add hashed public key from memory to stack
+    (call $store (i32.const 0) (i32.const 40)) ;; add hashed public key from memory to stack
     ;; stack: [sig, pubKey, hashedPubKey, memHashedPubKeyHex]
     (call $hex_decode) ;; decode hex string to bytes
     ;; stack: [sig, pubKey, hashedPubKey, memHashedPubKey]

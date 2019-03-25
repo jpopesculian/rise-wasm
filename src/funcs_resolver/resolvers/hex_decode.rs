@@ -2,7 +2,7 @@ use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use hex;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind};
 
 pub struct HexDecodeResolver;
 
@@ -11,7 +11,7 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeResolver {
         Signature::new(&[][..], None)
     }
 
-    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
         let encoded = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
         let string_rep = String::from_utf8(encoded).map_trap(TrapKind::Unreachable)?;

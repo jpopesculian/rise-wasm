@@ -12,9 +12,8 @@ extern crate wasm_bindgen;
 extern crate wasmi;
 
 use alloc::prelude::*;
-use cfg_if::cfg_if;
-use core::ops::Deref;
 use serde::{Deserialize, Serialize};
+use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::*;
 use wasmi::{ImportsBuilder, ModuleInstance, RuntimeValue};
 
@@ -31,6 +30,16 @@ use gas_middleware::GasMiddleware;
 use stack_based_memory::StackBasedMemory;
 use utils::js_buffer::JsBuffer;
 
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "wee_alloc")] {
+        extern crate wee_alloc;
+        #[global_allocator]
+        static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Options {
     name: String,
@@ -39,6 +48,7 @@ pub struct Options {
 
 #[wasm_bindgen]
 pub fn verify(wasm_binary: &[u8], options: &JsValue) {
+    set_panic_hook();
     // parse_options
     let options: Options = options.into_serde().unwrap();
 

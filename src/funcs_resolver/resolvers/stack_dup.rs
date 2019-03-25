@@ -10,7 +10,7 @@ impl<T: ResolverTarget> FuncResolver<T> for StackDupResolver {
         Signature::new(&[][..], None)
     }
 
-    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
         let val = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
         stack.push(val.clone()).map_trap(TrapKind::Unreachable)?;

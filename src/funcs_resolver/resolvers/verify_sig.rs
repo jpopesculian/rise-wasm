@@ -16,7 +16,7 @@ impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
         Signature::new(&[][..], Some(ValueType::I32))
     }
 
-    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
         let pub_key = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
         let sig = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;

@@ -1,11 +1,21 @@
 {
+  "license": "MIT",
   "scripts": {
     "build-rust": "wasm-pack build --target nodejs --dev",
-    "build-wasm": "wat2wasm test.wat",
+
+    "build-p2pkh": "wat2wasm samples/p2pkh/p2pkh.wat -o samples/p2pkh/p2pkh.wasm",
+    "build-loop": "wat2wasm samples/loop/loop.wat -o samples/loop/loop.wasm",
+    "build-wasm": "yarn build-p2pkh && yarn build-loop",
+
     "build-ts": "tsc",
-    "build": "yarn build-rust && yarn build-wasm && yarn build-ts",
-    "run-test": "node -e \"require('./test')\"",
-    "all": "yarn build && yarn run-test"
+
+    "build-all": "yarn build-rust && yarn build-wasm && yarn build-ts",
+
+    "run-p2pkh": "echo \"Running p2pkh sample:\" && node -e \"require('./samples/p2pkh')\"",
+    "run-loop": "echo \"Running loop sample:\" && node -e \"require('./samples/loop')\"",
+    "run-all": "yarn run-p2pkh && yarn run-loop",
+
+    "all": "yarn build-all && yarn run-all"
   },
   "devDependencies": {
     "@types/bip39": "^2.4.2",

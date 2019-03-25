@@ -15,13 +15,13 @@ impl<'a> ModuleImportResolver for ImportGlobalsResolver {
         field_name: &str,
         _descriptor: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
-        let global_ref = match field_name {
+        let _ = match field_name {
             _ => {
                 return Err(Error::Function(String::from(
                     "host module doesn't export global with name",
                 )));
             }
         };
-        Ok(global_ref)
+        // Ok(global_ref)
     }
 }

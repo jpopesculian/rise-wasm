@@ -4,9 +4,7 @@ use alloc::rc::Rc;
 use core::fmt;
 use wasmi::{isa::Instruction, Error, HostError, Middleware, MiddlewareEvent};
 
-const DEFAULT_MAX: u64 = 100;
-
-type GasForIndexFn = fn(usize) -> Option<u64>;
+const DEFAULT_MAX: u64 = 1000;
 
 #[derive(Debug, Clone)]
 pub struct GasMiddleware<T: ResolverTarget> {
@@ -38,6 +36,7 @@ impl<T: ResolverTarget> GasMiddleware<T> {
     }
 
     fn check_gas(&mut self, instruction: &Instruction) -> Result<(), GasMiddlewareError> {
+        // crate::utils::log::log(&format!("{:?}", instruction));
         self.current_gas += self.gas_for_instruction(instruction);
         if self.current_gas >= self.max_gas {
             Err(GasMiddlewareError {})
