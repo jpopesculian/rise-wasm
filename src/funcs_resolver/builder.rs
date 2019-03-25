@@ -3,6 +3,7 @@ use alloc::prelude::*;
 use hashbrown::HashMap;
 use wasmi::{RuntimeArgs, RuntimeValue, Trap};
 
+#[derive(Debug)]
 pub struct FuncsResolverBuilder<T> {
     indexes: HashMap<String, usize>,
     resolvers: Vec<Box<dyn FuncResolver<T>>>,
@@ -52,10 +53,8 @@ impl<T: ResolverTarget> FuncsResolverBuilder<T> {
             .run(target, args)
     }
 
-    pub fn gas(&self, index: usize) -> u64 {
-        self.get_resolver(index)
-            .expect("Index should resolve to a function resolver")
-            .gas()
+    pub fn gas(&self, index: usize) -> Option<u64> {
+        self.get_resolver(index).map(|resolver| resolver.gas())
     }
 }
 

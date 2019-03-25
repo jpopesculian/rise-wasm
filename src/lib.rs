@@ -19,6 +19,7 @@ use wasm_bindgen::prelude::*;
 use wasmi::{ImportsBuilder, ModuleInstance, RuntimeValue};
 
 mod funcs_resolver;
+mod gas_middleware;
 pub mod import_funcs;
 pub mod import_globals;
 pub mod import_memory;
@@ -26,6 +27,7 @@ mod stack_based_memory;
 pub mod utils;
 
 use funcs_resolver::build_funcs_resolver;
+use gas_middleware::GasMiddleware;
 use stack_based_memory::StackBasedMemory;
 use utils::js_buffer::JsBuffer;
 
@@ -51,8 +53,6 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
 
     let resolvers = build_funcs_resolver::<import_funcs::ImportFuncs>();
 
-    // let memory = StackBasedMemory::new();
-
     // define imports
     let mem_resolver = import_memory::ImportMemoryResolver::new(stack.memory());
     let globals_resolver = import_globals::ImportGlobalsResolver::new();
@@ -62,12 +62,13 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
         .with_resolver("memory", &mem_resolver)
         .with_resolver("globals", &globals_resolver);
 
+    let mut externals = import_funcs::ImportFuncs::new(resolvers.clone(), stack.clone());
+
     // build module instance
     let instance = ModuleInstance::new(&module, &imports)
         .expect("failed to instantiate wasm module")
+        .push_middleware(Box::new(GasMiddleware::new(resolvers.clone())))
         .assert_no_start();
-
-    let mut externals = import_funcs::ImportFuncs::new(resolvers.clone(), stack.clone());
 
     // call function and throw error if not equal to 1
     assert_eq!(

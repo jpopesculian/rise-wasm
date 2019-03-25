@@ -22,9 +22,9 @@
     (call $hash) ;; hash public key
     ;; stack: [sig, pubKey, hashedPubKey]
     (call $load (i32.const 0) (i32.const 40)) ;; add hashed public key from memory to stack
-    ;; stack: [sig, pubKey, hashedPubKey, scriptMemHex]
+    ;; stack: [sig, pubKey, hashedPubKey, memHashedPubKeyHex]
     (call $hex_decode) ;; decode hex string to bytes
-    ;; stack: [sig, pubKey, hashedPubKey, scriptMem]
+    ;; stack: [sig, pubKey, hashedPubKey, memHashedPubKey]
     (if (result i32)
         (call $compare) ;; compare hashes
             (then

@@ -13,6 +13,7 @@ extern "C" {
     fn log(x: usize);
 }
 
+#[derive(Debug)]
 pub struct ImportFuncs {
     stack: StackBasedMemory,
     resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>,

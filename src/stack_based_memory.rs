@@ -7,7 +7,7 @@ use wasmi::{MemoryInstance, MemoryRef};
 
 // @TODO: implement max size
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct StackBasedMemory {
     memory: MemoryRef,
     values: Rc<RefCell<Vec<Vec<u8>>>>,
