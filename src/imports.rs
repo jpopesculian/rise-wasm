@@ -2,24 +2,18 @@ use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
 use super::StackBasedMemory;
 use alloc::prelude::*;
 use alloc::rc::Rc;
-use wasm_bindgen::prelude::*;
 use wasmi::{
     Error, Externals, FuncInstance, FuncRef, ModuleImportResolver, RuntimeArgs, RuntimeValue,
-    Signature, Trap,
+    Signature, Trap, MemoryRef, MemoryDescriptor
 };
 
-#[wasm_bindgen(module = "../js/imports")]
-extern "C" {
-    fn log(x: usize);
-}
-
 #[derive(Debug)]
-pub struct ImportFuncs {
+pub struct ImportResolver {
     stack: StackBasedMemory,
-    resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>,
+    resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
 }
 
-impl Externals for ImportFuncs {
+impl Externals for ImportResolver {
     fn invoke_index(
         &mut self,
         index: usize,
@@ -29,32 +23,22 @@ impl Externals for ImportFuncs {
     }
 }
 
-impl ImportFuncs {
+impl ImportResolver {
     pub fn new(
-        resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>,
+        resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
         stack: StackBasedMemory,
-    ) -> ImportFuncs {
-        ImportFuncs { resolvers, stack }
+    ) -> ImportResolver {
+        ImportResolver { resolvers, stack }
     }
 }
 
-impl ResolverTarget for ImportFuncs {
+impl ResolverTarget for ImportResolver {
     fn stack(&self) -> StackBasedMemory {
         self.stack.clone()
     }
 }
 
-pub struct ImportFuncsResolver {
-    resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>,
-}
-
-impl ImportFuncsResolver {
-    pub fn new(resolvers: Rc<FuncsResolverBuilder<ImportFuncs>>) -> ImportFuncsResolver {
-        ImportFuncsResolver { resolvers }
-    }
-}
-
-impl ModuleImportResolver for ImportFuncsResolver {
+impl ModuleImportResolver for ImportResolver {
     fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
         match self.resolvers.resolve(field_name) {
             (Some(index), Some(resolver)) => Ok(FuncInstance::alloc_host(
@@ -65,5 +49,21 @@ impl ModuleImportResolver for ImportFuncsResolver {
                 "Could not find resolver at index",
             ))),
         }
+    }
+
+    fn resolve_memory(
+        &self,
+        field_name: &str,
+        _descriptor: &MemoryDescriptor,
+    ) -> Result<MemoryRef, Error> {
+        let mem_ref = match field_name {
+            "memory" => self.stack.memory(),
+            _ => {
+                return Err(Error::Function(String::from(
+                    "host module doesn't export function with name",
+                )));
+            }
+        };
+        Ok(mem_ref)
     }
 }

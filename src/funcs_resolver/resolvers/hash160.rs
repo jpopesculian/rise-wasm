@@ -1,8 +1,9 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::utils::{js_buffer::JsBuffer, map_trap::MapTrap};
+use crate::StackVal;
 use alloc::prelude::*;
 use wasm_bindgen::prelude::*;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind};
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 
 #[wasm_bindgen(module = "./imports")]
 extern "C" {
@@ -18,11 +19,9 @@ impl<T: ResolverTarget> FuncResolver<T> for Hash160Resolver {
 
     fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
-        let value = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        let hash: JsBuffer = hash160(&value)
-            .into_serde()
-            .map_trap(TrapKind::Unreachable)?;
-        stack.push(hash.to_vec()).map_trap(TrapKind::Unreachable)?;
+        let value = stack.pop().map_trap()?;
+        let hash: JsBuffer = hash160(&value.data()).into_serde().map_trap()?;
+        stack.push(StackVal::default(hash.to_vec())).map_trap()?;
         Ok(None)
     }
 

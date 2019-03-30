@@ -2,7 +2,7 @@ use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
 #[wasm_bindgen(module = "./imports")]
 extern "C" {
@@ -18,9 +18,9 @@ impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
 
     fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
-        let pub_key = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        let sig = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        let is_verified = verify_sig(&sig, &pub_key);
+        let pub_key = stack.pop().map_trap()?;
+        let sig = stack.pop().map_trap()?;
+        let is_verified = verify_sig(&sig.data(), &pub_key.data());
         Ok(Some(RuntimeValue::I32(if is_verified { 1 } else { 0 })))
     }
 

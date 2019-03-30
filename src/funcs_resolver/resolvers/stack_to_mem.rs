@@ -1,7 +1,7 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
 pub struct StackToMemResolver;
 
@@ -11,19 +11,16 @@ impl<T: ResolverTarget> FuncResolver<T> for StackToMemResolver {
             &[
                 ValueType::I32, // offset
             ][..],
-            None,
+            Some(ValueType::I32),
         )
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let offset: u32 = args.nth_checked(0)?;
         let stack = target.stack();
-        let bytes = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        stack
-            .memory()
-            .set(offset, &bytes)
-            .map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        Ok(None)
+        let bytes = stack.pop().map_trap()?.data();
+        stack.memory().set(offset, &bytes).map_trap()?;
+        Ok(Some(RuntimeValue::I32(bytes.len() as i32)))
     }
 
     fn gas(&self) -> u64 {

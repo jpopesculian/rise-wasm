@@ -2,7 +2,7 @@ use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
 #[wasm_bindgen(module = "./imports")]
 extern "C" {
@@ -18,9 +18,9 @@ impl<T: ResolverTarget> FuncResolver<T> for CompareResolver {
 
     fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
-        let left = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        let right = stack.pop().map_trap(TrapKind::MemoryAccessOutOfBounds)?;
-        let is_equal = compare(&left, &right);
+        let left = stack.pop().map_trap()?;
+        let right = stack.pop().map_trap()?;
+        let is_equal = compare(&left.data(), &right.data());
         Ok(Some(RuntimeValue::I32(if is_equal { 1 } else { 0 })))
     }
 

@@ -13,6 +13,7 @@ members = [
 ]
 
 [dependencies]
+byteorder = { version = "1", default-features = false }
 cfg-if = "0.1"
 lazycell = "1.2"
 hashbrown = "0.1"
