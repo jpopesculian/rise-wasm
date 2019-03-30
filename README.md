@@ -19,7 +19,7 @@ There are three languages here that are interacting JavaScript/TypeScript, rust 
 
 * JavaScript: `yarn build-ts`
 * rust: `yarn build-rust` (uses `cargo` and [`wasm-pack`](https://github.com/rustwasm/wasm-pack) to output a js library)
-* wasm: `yarn build-wasm` (uses `wat2wasm` from [`wabt`](https://github.com/WebAssembly/wabt))
+* wasm: `yarn build-wasm` (uses `wat2wasm` from [`wabt`](https://github.com/WebAssembly/wabt) and `asc` from [`assemblyscript`](https://github.com/AssemblyScript/assemblyscript))
 
 Alternatively you can build all of the resources with `yarn build-all`.
 
@@ -33,3 +33,4 @@ Some samples located in the `samples` folder shows an example of how to use the 
 - [ ] Tests
 - [x] Stack based memory using WebAssembly Tables instead of linear memory for better usability
 - [x] Better / more consistent way to pass variables between JavaScript and rust functions
+* [x] String based memory arguments (`utf16` and `utf8`) to functions (supports assembly script memory)
