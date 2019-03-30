@@ -17,8 +17,11 @@ pub fn build_funcs_resolver<T: ResolverTarget>() -> Rc<FuncsResolverBuilder<T>> 
             .push("hash160", Hash160Resolver::build())
             .push("hex_decode", HexDecodeResolver::build())
             .push("mem_to_stack", MemToStackResolver::build())
+            .push("stack_drop", StackDropResolver::build())
             .push("stack_dup", StackDupResolver::build())
             .push("stack_to_mem", StackToMemResolver::build())
+            .push("stack_to_utf16", StackToUtf16Resolver::build())
+            .push("stack_to_utf8", StackToUtf8Resolver::build())
             .push("utf16_to_stack", Utf16ToStackResolver::build())
             .push("utf8_to_stack", Utf8ToStackResolver::build())
             .push("verify_sig", VerifySigResolver::build()),

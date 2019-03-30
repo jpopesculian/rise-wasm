@@ -1,4 +1,4 @@
-#![feature(alloc, associated_type_defaults)]
+#![feature(alloc, associated_type_defaults, refcell_replace_swap)]
 #![no_std]
 
 #[macro_use]
@@ -54,7 +54,7 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
     let options: Options = options.into_serde().expect("Failed to parse options");
 
     // build memory
-    let stack = StackBasedMemory::new();
+    let stack = StackBasedMemory::default();
     for arg in options.args {
         stack.push(StackVal::default(arg.clone())).unwrap();
     }
