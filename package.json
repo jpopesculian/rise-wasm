@@ -18,10 +18,13 @@
     "@types/bip39": "^2.4.2",
     "@types/bitcoinjs-lib": "^4.0.1",
     "assemblyscript": "assemblyscript/assemblyscript",
+    "type-tagger": "^1.0.0",
     "typescript": "^3.3.4000"
   },
   "dependencies": {
+    "bech32-buffer": "^0.1.2",
     "bip39": "^2.5.0",
-    "bitcoinjs-lib": "^4.0.3"
+    "bitcoinjs-lib": "^4.0.3",
+    "dpos-offline": "^2.0.6"
   }
 }

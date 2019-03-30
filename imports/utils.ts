@@ -1,3 +1,8 @@
+import * as crypto from "crypto";
+import { As } from "type-tagger";
+import { RiseV2 } from "dpos-offline";
+import * as bech32 from "bech32-buffer";
+
 const INT_32_SIZE = 4;
 const MAX_BYTE = 255;
 const BYTE_SIZE = 8;
@@ -35,4 +40,21 @@ export function bytesToMemString(bytes: Uint8Array): string {
       return hexRep;
     })
     .join("\\")}`;
+}
+
+function hash256(bytes: Buffer): Buffer & As<"publicKey"> {
+  return crypto
+    .createHash("sha256")
+    .update(bytes)
+    .digest() as Buffer & As<"publicKey">;
+}
+
+export function scriptToAddress(bytes: Buffer): string {
+  return RiseV2.calcAddress(hash256(bytes));
+}
+
+export function validateAddressScript(address: string, bytes: Buffer): boolean {
+  const pubKey = Buffer.from(bech32.decode(address).data);
+  const hash = Buffer.concat([Buffer.from([1]), hash256(bytes)]);
+  return hash.equals(pubKey);
 }
