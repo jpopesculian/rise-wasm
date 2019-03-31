@@ -20,7 +20,7 @@ impl<T: ResolverTarget> FuncResolver<T> for CompareResolver {
         let stack = target.stack();
         let left = stack.pop().map_trap()?;
         let right = stack.pop().map_trap()?;
-        let is_equal = compare(&left.data(), &right.data());
+        let is_equal = compare(&left.data, &right.data);
         Ok(Some(RuntimeValue::I32(if is_equal { 1 } else { 0 })))
     }
 

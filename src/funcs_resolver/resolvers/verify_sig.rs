@@ -20,7 +20,7 @@ impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
         let stack = target.stack();
         let pub_key = stack.pop().map_trap()?;
         let sig = stack.pop().map_trap()?;
-        let is_verified = verify_sig(&sig.data(), &pub_key.data());
+        let is_verified = verify_sig(&sig.data, &pub_key.data);
         Ok(Some(RuntimeValue::I32(if is_verified { 1 } else { 0 })))
     }
 

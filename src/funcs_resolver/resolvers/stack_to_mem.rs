@@ -18,8 +18,9 @@ impl<T: ResolverTarget> FuncResolver<T> for StackToMemResolver {
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let offset: u32 = args.nth_checked(0)?;
         let stack = target.stack();
-        let bytes = stack.pop().map_trap()?.data();
-        stack.memory().set(offset, &bytes).map_trap()?;
+        let memory = target.memory().raw();
+        let bytes = stack.pop().map_trap()?.data;
+        memory.set(offset, &bytes).map_trap()?;
         Ok(Some(RuntimeValue::I32(bytes.len() as i32)))
     }
 

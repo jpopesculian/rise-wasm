@@ -12,12 +12,27 @@
  (import "env" "verify_sig" (func $samples/as-p2pkh/p2pkh/verifySig (result i32)))
  (table $0 1 funcref)
  (elem (i32.const 0) $null)
+ (global $~lib/allocator/arena/startOffset (mut i32) (i32.const 0))
+ (global $~lib/allocator/arena/offset (mut i32) (i32.const 0))
  (global $samples/as-p2pkh/p2pkh/pubKeyHash i32 (i32.const 8))
  (global $~lib/memory/HEAP_BASE i32 (i32.const 92))
  (export "memory" (memory $0))
  (export "table" (table $0))
  (start $start)
- (func $start:samples/as-p2pkh/p2pkh (; 6 ;) (type $FUNCSIG$v)
+ (func $start:~lib/allocator/arena (; 6 ;) (type $FUNCSIG$v)
+  global.get $~lib/memory/HEAP_BASE
+  i32.const 7
+  i32.add
+  i32.const 7
+  i32.const -1
+  i32.xor
+  i32.and
+  global.set $~lib/allocator/arena/startOffset
+  global.get $~lib/allocator/arena/startOffset
+  global.set $~lib/allocator/arena/offset
+ )
+ (func $start:samples/as-p2pkh/p2pkh (; 7 ;) (type $FUNCSIG$v)
+  call $start:~lib/allocator/arena
   call $samples/as-p2pkh/p2pkh/dup
   call $samples/as-p2pkh/p2pkh/hash
   global.get $samples/as-p2pkh/p2pkh/pubKeyHash
@@ -36,9 +51,9 @@
    unreachable
   end
  )
- (func $start (; 7 ;) (type $FUNCSIG$v)
+ (func $start (; 8 ;) (type $FUNCSIG$v)
   call $start:samples/as-p2pkh/p2pkh
  )
- (func $null (; 8 ;) (type $FUNCSIG$v)
+ (func $null (; 9 ;) (type $FUNCSIG$v)
  )
 )

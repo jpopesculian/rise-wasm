@@ -1,9 +1,10 @@
-use crate::StackBasedMemory;
+use crate::{StackBasedMemory, MemoryWrapper};
 use core::fmt;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 
 pub trait ResolverTarget {
     fn stack(self: &Self) -> StackBasedMemory;
+    fn memory(self: &Self) -> MemoryWrapper;
 }
 
 pub trait FuncResolver<T> {

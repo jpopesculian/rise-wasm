@@ -1,7 +1,9 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::memory::{MemoryVal, Raw, Utf16String};
 use crate::utils::map_trap::MapTrap;
 use crate::StackVal;
 use alloc::prelude::*;
+use core::convert::TryFrom;
 use hex;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 
@@ -14,10 +16,11 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeResolver {
 
     fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let stack = target.stack();
-        let string_rep = stack.pop().map_trap()?.string().map_trap()?;
+        let val: Utf16String = Utf16String::try_from(stack.pop().map_trap()?).map_trap()?;
+        let string_rep = val.string().map_trap()?;
         let decoded = hex::decode(string_rep).map_trap()?;
         stack
-            .push(StackVal::default(decoded))
+            .push(Raw::new(decoded).into())
             .map(|_| None)
             .map_trap()
     }

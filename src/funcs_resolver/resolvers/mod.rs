@@ -11,6 +11,7 @@ mod stack_to_utf8;
 mod utf16_to_stack;
 mod utf8_to_stack;
 mod verify_sig;
+mod arr_to_stack;
 
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 
@@ -27,3 +28,4 @@ pub use stack_to_utf8::StackToUtf8Resolver;
 pub use utf16_to_stack::Utf16ToStackResolver;
 pub use utf8_to_stack::Utf8ToStackResolver;
 pub use verify_sig::VerifySigResolver;
+pub use arr_to_stack::ArrToStackResolver;

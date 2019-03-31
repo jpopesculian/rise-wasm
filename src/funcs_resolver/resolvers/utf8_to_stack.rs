@@ -1,4 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::memory::{MemoryVal, Utf8String};
 use crate::utils::map_trap::MapTrap;
 use crate::StackVal;
 use alloc::prelude::*;
@@ -20,9 +21,9 @@ impl<T: ResolverTarget> FuncResolver<T> for Utf8ToStackResolver {
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let offset: u32 = args.nth_checked(0)?;
         let stack = target.stack();
-        let size = LittleEndian::read_u32(&stack.memory().get(offset, 4).map_trap()?);
-        let bytes = stack.memory().get(offset + 4, size as usize).map_trap()?;
-        stack.push(StackVal::utf8(bytes)).map(|_| None).map_trap()
+        let memory = target.memory();
+        let val: Utf8String = memory.get_dyn_value(offset).map_trap()?;
+        stack.push(val.into()).map(|_| None).map_trap()
     }
 
     fn gas(&self) -> u64 {

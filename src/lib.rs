@@ -1,4 +1,9 @@
-#![feature(alloc, associated_type_defaults, refcell_replace_swap)]
+#![feature(
+    alloc,
+    associated_type_defaults,
+    refcell_replace_swap,
+    toowned_clone_into
+)]
 #![no_std]
 
 #[macro_use]
@@ -21,12 +26,15 @@ use wasmi::{ImportsBuilder, ModuleInstance};
 mod funcs_resolver;
 mod gas_middleware;
 mod imports;
+mod memory;
 mod stack_based_memory;
 pub mod utils;
 
 use funcs_resolver::build_funcs_resolver;
 use gas_middleware::GasMiddleware;
 use imports::ImportResolver;
+pub use memory::MemoryWrapper;
+use memory::{MemoryVal, Raw};
 pub use stack_based_memory::{StackBasedMemory, StackVal};
 use utils::js_buffer::JsBuffer;
 
@@ -54,9 +62,10 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
     let options: Options = options.into_serde().expect("Failed to parse options");
 
     // build memory
+    let memory = MemoryWrapper::default();
     let stack = StackBasedMemory::default();
     for arg in options.args {
-        stack.push(StackVal::default(arg.clone())).unwrap();
+        stack.push(Raw::new(arg.clone()).into()).unwrap();
     }
 
     // load and validate wasm
@@ -64,7 +73,7 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
 
     // build resolvers
     let resolvers = build_funcs_resolver::<ImportResolver>();
-    let mut externals = ImportResolver::new(resolvers.clone(), stack.clone());
+    let mut externals = ImportResolver::new(resolvers.clone(), stack.clone(), memory.clone());
     let imports = ImportsBuilder::new().with_resolver("env", &externals);
 
     // build module instance
