@@ -1,10 +1,11 @@
-use crate::{MemoryWrapper, StackStorage};
+use crate::memory::MemoryWrapper;
+use crate::storage::TableStorage;
 use core::fmt;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 
 pub trait ResolverTarget {
-    fn stack(self: &Self) -> StackStorage;
     fn memory(self: &Self) -> MemoryWrapper;
+    fn table(self: &Self) -> TableStorage;
 }
 
 pub trait FuncResolver<T> {

@@ -1,6 +1,6 @@
 use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
 use super::MemoryWrapper;
-use super::StackStorage;
+use crate::storage::TableStorage;
 use alloc::prelude::*;
 use alloc::rc::Rc;
 use wasmi::{
@@ -10,7 +10,7 @@ use wasmi::{
 
 #[derive(Debug)]
 pub struct ImportResolver {
-    stack: StackStorage,
+    table: TableStorage,
     resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
     memory: MemoryWrapper,
 }
@@ -28,20 +28,20 @@ impl Externals for ImportResolver {
 impl ImportResolver {
     pub fn new(
         resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
-        stack: StackStorage,
+        table: TableStorage,
         memory: MemoryWrapper,
     ) -> ImportResolver {
         ImportResolver {
             resolvers,
-            stack,
+            table,
             memory,
         }
     }
 }
 
 impl ResolverTarget for ImportResolver {
-    fn stack(&self) -> StackStorage {
-        self.stack.clone()
+    fn table(&self) -> TableStorage {
+        self.table.clone()
     }
 
     fn memory(&self) -> MemoryWrapper {

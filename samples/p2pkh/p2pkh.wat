@@ -1,38 +1,40 @@
 (module
   (func $hash
-    (import "env" "hash160"))
-  (func $dup
-    (import "env" "stack_dup"))
+    (import "env" "hash160") (param i32) (param i32) (result i32))
   (func $hex_decode
-    (import "env" "hex_decode"))
+    (import "env" "hex_decode_utf8") (param i32) (param i32) (result i32))
   (func $compare
-    (import "env" "compare") (result i32))
+    (import "env" "compare") (param i32) (param i32) (result i32))
   (func $verify_sig
-    (import "env" "verify_sig") (result i32))
-  (func $store
-    (import "env" "utf8_to_stack") (param i32))
+    (import "env" "verify_sig") (param i32) (param i32) (result i32))
+  (func $load_arr
+    (import "env" "table_load_typed_arr") (param i32) (param i32) (result i32))
 
   (import "env" "memory" (memory 1))
   (data (i32.const 0) "\28\00\00\002ef1eacc8cad29a27a54312731d6f3624e013e46")
 
   (func $main
-    ;; stack: [sig, pubKey]
-    (call $dup) ;; duplicate top stack arg
-    ;; stack: [sig, pubKey, pubKey]
-    (call $hash) ;; hash public key
-    ;; stack: [sig, pubKey, hashedPubKey]
-    (call $store (i32.const 0)) ;; add hashed public key from memory to stack
-    ;; stack: [sig, pubKey, hashedPubKey, memHashedPubKeyHex]
-    (call $hex_decode) ;; decode hex string to bytes
-    ;; stack: [sig, pubKey, hashedPubKey, memHashedPubKey]
-    (if (call $compare) ;; compare hashes
+    (local $sig_ptr i32)
+    (local $pubkey_ptr i32)
+    (local $pubhash_ptr i32)
+    (local $localhash_ptr i32)
+    (set_local $sig_ptr (i32.const 512))
+    (set_local $pubkey_ptr (i32.const 1024))
+    (set_local $pubhash_ptr (i32.const 1536))
+    (set_local $localhash_ptr (i32.const 0))
+
+    (drop (call $load_arr (i32.const 0) (get_local $sig_ptr)))
+    (drop (call $load_arr (i32.const 1) (get_local $pubkey_ptr)))
+
+    (drop (call $hash (get_local $pubkey_ptr) (get_local $pubhash_ptr)))
+    (drop (call $hex_decode (get_local $localhash_ptr) (get_local $localhash_ptr)))
+    (if (call $compare (get_local $localhash_ptr) (get_local $pubhash_ptr))
         (then
-            ;; stack: [sig, pubKey]
-            (if (call $verify_sig) ;; verify signature
-              (then (nop)) ;; return none
-              (else (unreachable)))) ;; exception
+            (if (call $verify_sig (get_local $sig_ptr) (get_local $pubkey_ptr))
+              (then (nop))
+              (else (unreachable))))
         (else
-            (unreachable))) ;; exception
+            (unreachable)))
     )
   (start $main)
   )

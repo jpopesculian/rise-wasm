@@ -1,4 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::memory::{MemoryVal, TypedArray};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
@@ -13,14 +14,22 @@ pub struct VerifySigResolver;
 
 impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
     fn signature(&self, _: &Signature) -> Signature {
-        Signature::new(&[][..], Some(ValueType::I32))
+        Signature::new(
+            &[
+                ValueType::I32, // publicKey
+                ValueType::I32, // signature
+            ][..],
+            Some(ValueType::I32),
+        )
     }
 
-    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let stack = target.stack();
-        let pub_key = stack.pop().map_trap()?;
-        let sig = stack.pop().map_trap()?;
-        let is_verified = verify_sig(&sig.data, &pub_key.data);
+    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+        let pubkey_ptr = args.nth_checked(0)?;
+        let sig_ptr = args.nth_checked(1)?;
+        let memory = target.memory();
+        let pubkey: TypedArray = memory.get_dyn_value(pubkey_ptr).map_trap()?;
+        let sig: TypedArray = memory.get_dyn_value(sig_ptr).map_trap()?;
+        let is_verified = verify_sig(sig.bytes(), pubkey.bytes());
         Ok(Some(RuntimeValue::I32(if is_verified { 1 } else { 0 })))
     }
 

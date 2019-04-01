@@ -35,7 +35,7 @@ use gas_middleware::GasMiddleware;
 use imports::ImportResolver;
 pub use memory::MemoryWrapper;
 use memory::Raw;
-pub use storage::{StackStorage, StorageVal};
+pub use storage::{StorageVal, TableStorage};
 use utils::js_buffer::JsBuffer;
 
 use cfg_if::cfg_if;
@@ -63,9 +63,11 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
 
     // build memory
     let memory = MemoryWrapper::default();
-    let stack = StackStorage::default();
-    for arg in options.args {
-        stack.push(Raw::default(arg.clone()).into()).unwrap();
+    let table = TableStorage::default();
+    for (i, arg) in options.args.iter().enumerate() {
+        table
+            .insert(i as u32, Raw::default(arg.to_vec()).into())
+            .unwrap();
     }
 
     // load and validate wasm
@@ -73,7 +75,7 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
 
     // build resolvers
     let resolvers = build_funcs_resolver::<ImportResolver>();
-    let mut externals = ImportResolver::new(resolvers.clone(), stack.clone(), memory.clone());
+    let mut externals = ImportResolver::new(resolvers.clone(), table.clone(), memory.clone());
     let imports = ImportsBuilder::new().with_resolver("env", &externals);
 
     // build module instance

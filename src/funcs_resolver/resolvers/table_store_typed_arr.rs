@@ -4,12 +4,13 @@ use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct TypedArrToStackResolver;
+pub struct TableStoreTypedArrayResolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for TypedArrToStackResolver {
+impl<T: ResolverTarget> FuncResolver<T> for TableStoreTypedArrayResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
+                ValueType::I32, // key
                 ValueType::I32, // offset
                 ValueType::I32, // elem_size
             ][..],
@@ -18,16 +19,16 @@ impl<T: ResolverTarget> FuncResolver<T> for TypedArrToStackResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let offset: u32 = args.nth_checked(0)?;
-        let elem_size: u32 = args.nth_checked(1)?;
-        let memory = target.memory();
-        let mut val: TypedArray = memory.get_dyn_value(offset).map_trap()?;
-        crate::utils::log::log(&format!("{:?}", val));
+        let key: u32 = args.nth_checked(0)?;
+        let offset: u32 = args.nth_checked(1)?;
+        let elem_size: u32 = args.nth_checked(2)?;
+        let mut val: TypedArray = target.memory().get_dyn_value(offset).map_trap()?;
         val.resize(elem_size).map_trap()?;
-        crate::utils::log::log(&format!("{:?}", val));
-        Ok(None)
-        // let val: Array = memory.get_dyn_value(offset).map_trap()?;
-        // stack.push(val.into()).map(|_| None).map_trap()
+        target
+            .table()
+            .insert(key, val.into())
+            .map(|_| None)
+            .map_trap()
     }
 
     fn gas(&self) -> u64 {
@@ -35,8 +36,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TypedArrToStackResolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for TypedArrToStackResolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for TableStoreTypedArrayResolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(TypedArrToStackResolver {})
+        Box::new(TableStoreTypedArrayResolver {})
     }
 }

@@ -1,4 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::memory::{MemoryVal, TypedArray};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
@@ -13,14 +14,22 @@ pub struct CompareResolver;
 
 impl<T: ResolverTarget> FuncResolver<T> for CompareResolver {
     fn signature(&self, _: &Signature) -> Signature {
-        Signature::new(&[][..], Some(ValueType::I32))
+        Signature::new(
+            &[
+                ValueType::I32, // left
+                ValueType::I32, // right
+            ][..],
+            Some(ValueType::I32),
+        )
     }
 
-    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let stack = target.stack();
-        let left = stack.pop().map_trap()?;
-        let right = stack.pop().map_trap()?;
-        let is_equal = compare(&left.data, &right.data);
+    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+        let left_ptr = args.nth_checked(0)?;
+        let right_ptr = args.nth_checked(1)?;
+        let memory = target.memory();
+        let left: TypedArray = memory.get_dyn_value(left_ptr).map_trap()?;
+        let right: TypedArray = memory.get_dyn_value(right_ptr).map_trap()?;
+        let is_equal = compare(left.bytes(), right.bytes());
         Ok(Some(RuntimeValue::I32(if is_equal { 1 } else { 0 })))
     }
 

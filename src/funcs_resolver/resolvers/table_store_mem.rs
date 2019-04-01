@@ -4,12 +4,13 @@ use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct MemToStackResolver;
+pub struct TableStoreMemResolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for MemToStackResolver {
+impl<T: ResolverTarget> FuncResolver<T> for TableStoreMemResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
+                ValueType::I32, // key
                 ValueType::I32, // offset
                 ValueType::I32, // size
             ][..],
@@ -18,13 +19,13 @@ impl<T: ResolverTarget> FuncResolver<T> for MemToStackResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let offset: u32 = args.nth_checked(0)?;
-        let size: u32 = args.nth_checked(1)?;
-        let stack = target.stack();
-        let memory = target.memory().raw();
-        let bytes = memory.get(offset, size as usize).map_trap()?;
-        stack
-            .push(Raw::default(bytes).into())
+        let key: u32 = args.nth_checked(0)?;
+        let offset: u32 = args.nth_checked(1)?;
+        let size: u32 = args.nth_checked(2)?;
+        let bytes = target.memory().get(offset, size as usize).map_trap()?;
+        target
+            .table()
+            .insert(key, Raw::default(bytes).into())
             .map(|_| None)
             .map_trap()
     }
@@ -34,8 +35,8 @@ impl<T: ResolverTarget> FuncResolver<T> for MemToStackResolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for MemToStackResolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for TableStoreMemResolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(MemToStackResolver {})
+        Box::new(TableStoreMemResolver {})
     }
 }

@@ -45,11 +45,12 @@ impl MemoryWrapper {
         &self,
         offset: u32,
         value: T,
-    ) -> Result<(), Error> {
+    ) -> Result<u32, Error> {
         let size = value.to_little_endian_info();
         let mut bytes = self.get(offset, size)?;
         value.into_little_endian(&mut bytes, offset);
-        self.set(offset, &bytes)
+        self.set(offset, &bytes);
+        Ok(size as u32)
     }
 
     pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
