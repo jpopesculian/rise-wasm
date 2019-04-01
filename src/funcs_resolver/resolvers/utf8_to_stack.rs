@@ -1,9 +1,7 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::memory::{MemoryVal, Utf8String};
+use crate::memory::Utf8String;
 use crate::utils::map_trap::MapTrap;
-use crate::StackVal;
 use alloc::prelude::*;
-use byteorder::{ByteOrder, LittleEndian};
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
 pub struct Utf8ToStackResolver;

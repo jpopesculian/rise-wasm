@@ -15,18 +15,19 @@ declare function compare(): i32;
 @external("env", "verify_sig")
 declare function verifySig(): i32;
 
-@external("env", "utf16_to_stack")
-declare function store(arr: string): void;
+@external("env", "typed_arr_to_stack")
+declare function store(arr: Uint16Array, elem_size: u32): void;
 
 const pubKeyHash = "2ef1eacc8cad29a27a54312731d6f3624e013e46";
 
-// var arr = new Array<u16>();
-// arr[0] = 5
-// arr[1] = 20
+var arr: Uint16Array = new Uint16Array(11);
+arr[0] = 1
+arr[1] = 2
+arr[2] = 3
 
 dup();
 hash();
-store(pubKeyHash);
+store(arr, 2);
 hexDecode();
 if (compare() !== 1) {
     unreachable()

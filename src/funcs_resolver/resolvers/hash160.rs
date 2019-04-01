@@ -1,5 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::memory::{MemoryVal, Raw};
+use crate::memory::Raw;
 use crate::utils::{js_buffer::JsBuffer, map_trap::MapTrap};
 use alloc::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -21,7 +21,7 @@ impl<T: ResolverTarget> FuncResolver<T> for Hash160Resolver {
         let stack = target.stack();
         let value = stack.pop().map_trap()?;
         let hash: JsBuffer = hash160(&value.data).into_serde().map_trap()?;
-        stack.push(Raw::new(hash.to_vec()).into()).map_trap()?;
+        stack.push(Raw::default(hash.to_vec()).into()).map_trap()?;
         Ok(None)
     }
 

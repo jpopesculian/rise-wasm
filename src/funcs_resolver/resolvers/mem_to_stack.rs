@@ -1,7 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::memory::{MemoryVal, Raw};
+use crate::memory::Raw;
 use crate::utils::map_trap::MapTrap;
-use crate::StackVal;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
@@ -24,7 +23,10 @@ impl<T: ResolverTarget> FuncResolver<T> for MemToStackResolver {
         let stack = target.stack();
         let memory = target.memory().raw();
         let bytes = memory.get(offset, size as usize).map_trap()?;
-        stack.push(Raw::new(bytes).into()).map(|_| None).map_trap()
+        stack
+            .push(Raw::default(bytes).into())
+            .map(|_| None)
+            .map_trap()
     }
 
     fn gas(&self) -> u64 {

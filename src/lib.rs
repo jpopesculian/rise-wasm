@@ -27,15 +27,15 @@ mod funcs_resolver;
 mod gas_middleware;
 mod imports;
 mod memory;
-mod stack_based_memory;
+mod storage;
 pub mod utils;
 
 use funcs_resolver::build_funcs_resolver;
 use gas_middleware::GasMiddleware;
 use imports::ImportResolver;
 pub use memory::MemoryWrapper;
-use memory::{MemoryVal, Raw};
-pub use stack_based_memory::{StackBasedMemory, StackVal};
+use memory::Raw;
+pub use storage::{StackStorage, StorageVal};
 use utils::js_buffer::JsBuffer;
 
 use cfg_if::cfg_if;
@@ -63,9 +63,9 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
 
     // build memory
     let memory = MemoryWrapper::default();
-    let stack = StackBasedMemory::default();
+    let stack = StackStorage::default();
     for arg in options.args {
-        stack.push(Raw::new(arg.clone()).into()).unwrap();
+        stack.push(Raw::default(arg.clone()).into()).unwrap();
     }
 
     // load and validate wasm

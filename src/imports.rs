@@ -1,18 +1,18 @@
 use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
-use super::StackBasedMemory;
 use super::MemoryWrapper;
+use super::StackStorage;
 use alloc::prelude::*;
 use alloc::rc::Rc;
 use wasmi::{
-    Error, Externals, FuncInstance, FuncRef, ModuleImportResolver, RuntimeArgs, RuntimeValue,
-    Signature, Trap, MemoryRef, MemoryDescriptor
+    Error, Externals, FuncInstance, FuncRef, MemoryDescriptor, MemoryRef, ModuleImportResolver,
+    RuntimeArgs, RuntimeValue, Signature, Trap,
 };
 
 #[derive(Debug)]
 pub struct ImportResolver {
-    stack: StackBasedMemory,
+    stack: StackStorage,
     resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
-    memory: MemoryWrapper
+    memory: MemoryWrapper,
 }
 
 impl Externals for ImportResolver {
@@ -28,15 +28,19 @@ impl Externals for ImportResolver {
 impl ImportResolver {
     pub fn new(
         resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
-        stack: StackBasedMemory,
+        stack: StackStorage,
         memory: MemoryWrapper,
     ) -> ImportResolver {
-        ImportResolver { resolvers, stack, memory }
+        ImportResolver {
+            resolvers,
+            stack,
+            memory,
+        }
     }
 }
 
 impl ResolverTarget for ImportResolver {
-    fn stack(&self) -> StackBasedMemory {
+    fn stack(&self) -> StackStorage {
         self.stack.clone()
     }
 

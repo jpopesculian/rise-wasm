@@ -1,4 +1,5 @@
 mod abort;
+mod arr_to_stack;
 mod compare;
 mod hash160;
 mod hex_decode;
@@ -8,14 +9,15 @@ mod stack_dup;
 mod stack_to_mem;
 mod stack_to_utf16;
 mod stack_to_utf8;
+mod typed_arr_to_stack;
 mod utf16_to_stack;
 mod utf8_to_stack;
 mod verify_sig;
-mod arr_to_stack;
 
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 
 pub use abort::AbortResolver;
+pub use arr_to_stack::ArrToStackResolver;
 pub use compare::CompareResolver;
 pub use hash160::Hash160Resolver;
 pub use hex_decode::HexDecodeResolver;
@@ -25,7 +27,7 @@ pub use stack_dup::StackDupResolver;
 pub use stack_to_mem::StackToMemResolver;
 pub use stack_to_utf16::StackToUtf16Resolver;
 pub use stack_to_utf8::StackToUtf8Resolver;
+pub use typed_arr_to_stack::TypedArrToStackResolver;
 pub use utf16_to_stack::Utf16ToStackResolver;
 pub use utf8_to_stack::Utf8ToStackResolver;
 pub use verify_sig::VerifySigResolver;
-pub use arr_to_stack::ArrToStackResolver;

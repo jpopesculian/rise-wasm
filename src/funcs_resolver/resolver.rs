@@ -1,9 +1,9 @@
-use crate::{StackBasedMemory, MemoryWrapper};
+use crate::{MemoryWrapper, StackStorage};
 use core::fmt;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 
 pub trait ResolverTarget {
-    fn stack(self: &Self) -> StackBasedMemory;
+    fn stack(self: &Self) -> StackStorage;
     fn memory(self: &Self) -> MemoryWrapper;
 }
 

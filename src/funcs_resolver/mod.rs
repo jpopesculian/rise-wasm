@@ -23,6 +23,7 @@ pub fn build_funcs_resolver<T: ResolverTarget>() -> Rc<FuncsResolverBuilder<T>> 
             .push("stack_to_mem", StackToMemResolver::build())
             .push("stack_to_utf16", StackToUtf16Resolver::build())
             .push("stack_to_utf8", StackToUtf8Resolver::build())
+            .push("typed_arr_to_stack", TypedArrToStackResolver::build())
             .push("utf16_to_stack", Utf16ToStackResolver::build())
             .push("utf8_to_stack", Utf8ToStackResolver::build())
             .push("verify_sig", VerifySigResolver::build()),

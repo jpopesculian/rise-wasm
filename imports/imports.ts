@@ -11,14 +11,7 @@ export const compare = (left: Uint8Array, right: Uint8Array) => {
       right
     ).toString("hex")}>`
   );
-  if (left.length === right.length) {
-    for (let i = 0; i < left.length; i++) {
-      if (left[i] !== right[i]) {
-        return false;
-      }
-    }
-  }
-  return true;
+  return Buffer.from(left).equals(Buffer.from(right));
 };
 
 export const verify_sig = (sig: Uint8Array, publicKey: Uint8Array) => {
