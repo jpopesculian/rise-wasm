@@ -10,18 +10,17 @@ impl<T: ResolverTarget> FuncResolver<T> for TableLoadMemResolver {
         Signature::new(
             &[
                 ValueType::I32, // key
-                ValueType::I32, // offset
             ][..],
-            Some(ValueType::I32),
+            Some(ValueType::I32), // ptr
         )
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let key: u32 = args.nth_checked(0)?;
-        let offset: u32 = args.nth_checked(1)?;
         let val = target.table().get(&key).map_trap()?;
-        target.memory().set(offset, val.bytes())?;
-        Ok(Some(RuntimeValue::I32(val.size() as i32)))
+        let dest = target.allocator().allocate(val.bytes().len() as u32)?;
+        target.memory().set(dest, val.bytes())?;
+        Ok(Some(RuntimeValue::I32(dest as i32)))
     }
 
     fn gas(&self) -> u64 {

@@ -12,21 +12,20 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf8Resolver {
         Signature::new(
             &[
                 ValueType::I32, // src
-                ValueType::I32, // dest
             ][..],
-            Some(ValueType::I32), // size
+            Some(ValueType::I32), // ptr
         )
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let src = args.nth_checked(0)?;
-        let dest = args.nth_checked(1)?;
         let memory = target.memory();
         let val: Utf8String = memory.get_dyn_value(src)?;
         let string_rep = val.string()?;
         let decoded = TypedArray::default(hex::decode(string_rep).map_trap()?);
-        let size = memory.set_dyn_value(dest, decoded)?;
-        Ok(Some(RuntimeValue::I32(size as i32)))
+        let dest = target.allocator().allocate(decoded.written_size() as u32)?;
+        let _ = memory.set_dyn_value(dest, decoded)?;
+        Ok(Some(RuntimeValue::I32(dest as i32)))
     }
 
     fn gas(&self) -> u64 {

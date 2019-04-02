@@ -97,6 +97,7 @@ pub trait MemoryVal {
     fn size(&self) -> u32 {
         self.len() * self.elem_size()
     }
+    fn written_size(&self) -> usize;
 }
 
 pub trait DynLittleEndianConvert: MemoryVal + Sized {
@@ -104,7 +105,9 @@ pub trait DynLittleEndianConvert: MemoryVal + Sized {
         memory: MemoryRef,
         offset: u32,
     ) -> Result<(u32, MemoryDescriptor), RuntimeError>;
-    fn to_little_endian_info(&self) -> usize;
+    fn to_little_endian_info(&self) -> usize {
+        self.written_size()
+    }
     fn into_little_endian(self, buffer: &mut [u8], _offset: u32);
     fn from_little_endian(
         buffer: &[u8],
@@ -142,10 +145,6 @@ impl DynLittleEndianConvert for Utf16String {
         Ok((offset + 4, descriptor))
     }
 
-    fn to_little_endian_info(&self) -> usize {
-        self.bytes().len() + 4
-    }
-
     fn into_little_endian(self, buffer: &mut [u8], _offset: u32) {
         let mut len_descriptor = [0; 4];
         LittleEndian::write_u32(&mut len_descriptor, self.len());
@@ -178,6 +177,10 @@ impl MemoryVal for Utf16String {
 
     fn val_type() -> StorageValType {
         StorageValType::Utf16
+    }
+
+    fn written_size(&self) -> usize {
+        self.bytes().len() + 4
     }
 }
 
@@ -273,10 +276,6 @@ impl DynLittleEndianConvert for Utf8String {
         Ok((offset + 4, descriptor))
     }
 
-    fn to_little_endian_info(&self) -> usize {
-        self.bytes().len() + 4
-    }
-
     fn into_little_endian(self, buffer: &mut [u8], _offset: u32) {
         let mut len_descriptor = [0; 4];
         LittleEndian::write_u32(&mut len_descriptor, self.len());
@@ -306,6 +305,10 @@ impl MemoryVal for Utf8String {
 
     fn val_type() -> StorageValType {
         StorageValType::Utf8
+    }
+
+    fn written_size(&self) -> usize {
+        self.bytes().len() + 4
     }
 }
 
@@ -410,6 +413,10 @@ impl MemoryVal for Array {
     fn val_type() -> StorageValType {
         StorageValType::Array
     }
+
+    fn written_size(&self) -> usize {
+        self.bytes().len() + 16
+    }
 }
 
 impl DynLittleEndianConvert for Array {
@@ -429,10 +436,6 @@ impl DynLittleEndianConvert for Array {
             elem_size: size / length,
         };
         Ok((size_offset + 8, descriptor))
-    }
-
-    fn to_little_endian_info(&self) -> usize {
-        self.bytes().len() + 16
     }
 
     fn into_little_endian(self, buffer: &mut [u8], offset: u32) {
@@ -560,8 +563,11 @@ impl MemoryVal for TypedArray {
     }
 
     fn val_type() -> StorageValType {
-        // TODO fix this
-        StorageValType::Array
+        StorageValType::TypedArray
+    }
+
+    fn written_size(&self) -> usize {
+        self.bytes().len() + 20
     }
 }
 
@@ -582,10 +588,6 @@ impl DynLittleEndianConvert for TypedArray {
             elem_size: 1,
         };
         Ok((arr_offset + byte_offset + 8, descriptor))
-    }
-
-    fn to_little_endian_info(&self) -> usize {
-        self.bytes().len() + 20
     }
 
     fn into_little_endian(self, buffer: &mut [u8], offset: u32) {
@@ -691,6 +693,10 @@ impl MemoryVal for Raw {
 
     fn val_type() -> StorageValType {
         StorageValType::Raw
+    }
+
+    fn written_size(&self) -> usize {
+        self.bytes().len()
     }
 }
 

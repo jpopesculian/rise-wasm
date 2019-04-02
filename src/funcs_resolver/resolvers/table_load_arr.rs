@@ -1,5 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::memory::Array;
+use crate::memory::{Array, MemoryVal};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use core::convert::TryInto;
@@ -12,18 +12,17 @@ impl<T: ResolverTarget> FuncResolver<T> for TableLoadArrayResolver {
         Signature::new(
             &[
                 ValueType::I32, // key
-                ValueType::I32, // offset
             ][..],
-            Some(ValueType::I32),
+            Some(ValueType::I32), // ptr
         )
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let key: u32 = args.nth_checked(0)?;
-        let offset: u32 = args.nth_checked(1)?;
         let val: Array = target.table().get(&key).map_trap()?.try_into()?;
-        let size = target.memory().set_dyn_value(offset, val)?;
-        Ok(Some(RuntimeValue::I32(size as i32)))
+        let dest = target.allocator().allocate(val.written_size() as u32)?;
+        let _ = target.memory().set_dyn_value(dest, val)?;
+        Ok(Some(RuntimeValue::I32(dest as i32)))
     }
 
     fn gas(&self) -> u64 {

@@ -17,21 +17,20 @@ impl<T: ResolverTarget> FuncResolver<T> for Hash160Resolver {
         Signature::new(
             &[
                 ValueType::I32, // src
-                ValueType::I32, // dest
             ][..],
-            Some(ValueType::I32), // size
+            Some(ValueType::I32), // ptr
         )
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let src = args.nth_checked(0)?;
-        let dest = args.nth_checked(1)?;
         let memory = target.memory();
         let val: TypedArray = memory.get_dyn_value(src)?;
         let hash: JsBuffer = hash160(val.bytes()).into_serde().map_trap()?;
         let result = TypedArray::default(hash.to_vec());
-        let size = memory.set_dyn_value(dest, result)?;
-        Ok(Some(RuntimeValue::I32(size as i32)))
+        let dest = target.allocator().allocate(result.written_size() as u32)?;
+        let _ = memory.set_dyn_value(dest, result)?;
+        Ok(Some(RuntimeValue::I32(dest as i32)))
     }
 
     fn gas(&self) -> u64 {
