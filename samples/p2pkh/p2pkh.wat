@@ -18,9 +18,9 @@
     (local $pubkey_ptr i32)
     (local $pubhash_ptr i32)
     (local $localhash_ptr i32)
-    (set_local $sig_ptr (i32.const 512))
-    (set_local $pubkey_ptr (i32.const 1024))
-    (set_local $pubhash_ptr (i32.const 1536))
+    (set_local $sig_ptr (i32.const 256))
+    (set_local $pubkey_ptr (i32.const 512))
+    (set_local $pubhash_ptr (i32.const 768))
     (set_local $localhash_ptr (i32.const 0))
 
     (drop (call $load_arr (i32.const 0) (get_local $sig_ptr)))

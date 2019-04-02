@@ -1,6 +1,6 @@
 (module
   (func $load
-    (import "env" "stack_to_mem") (param i32) (result i32))
+    (import "env" "table_load_mem") (param i32) (param i32) (result i32))
   (import "env" "memory" (memory 1))
 
   (func $dec (param $num i32) (result i32)
@@ -8,10 +8,10 @@
 
   (func $main
     (local $loop-left i32)
-    ;; stack: [loop-left]
-    (drop (call $load (i32.const 0))) ;; get loop-left param
-    ;; stack: []
-    (set_local $loop-left (i32.load (i32.const 0)))
+    (local $loop-ptr i32)
+    (set_local $loop-ptr (i32.const 0))
+    (drop (call $load (i32.const 0) (get_local $loop-ptr)))
+    (set_local $loop-left (i32.load (get_local $loop-ptr)))
     (block
     (loop
       (br_if 1 (i32.le_s (get_local $loop-left) (i32.const 0)))

@@ -16,16 +16,16 @@ impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
-                ValueType::I32, // publicKey
                 ValueType::I32, // signature
+                ValueType::I32, // publicKey
             ][..],
             Some(ValueType::I32),
         )
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let pubkey_ptr = args.nth_checked(0)?;
-        let sig_ptr = args.nth_checked(1)?;
+        let sig_ptr = args.nth_checked(0)?;
+        let pubkey_ptr = args.nth_checked(1)?;
         let memory = target.memory();
         let pubkey: TypedArray = memory.get_dyn_value(pubkey_ptr).map_trap()?;
         let sig: TypedArray = memory.get_dyn_value(sig_ptr).map_trap()?;

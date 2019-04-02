@@ -25,7 +25,7 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf16Resolver {
         let val: Utf16String = memory.get_dyn_value(src).map_trap()?;
         let string_rep = val.string().map_trap()?;
         let decoded = TypedArray::default(hex::decode(string_rep).map_trap()?);
-        let size = memory.set_dyn_value(dest, val).map_trap()?;
+        let size = memory.set_dyn_value(dest, decoded).map_trap()?;
         Ok(Some(RuntimeValue::I32(size as i32)))
     }
 
