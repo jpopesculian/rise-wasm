@@ -22,7 +22,7 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreMemResolver {
         let key: u32 = args.nth_checked(0)?;
         let offset: u32 = args.nth_checked(1)?;
         let size: u32 = args.nth_checked(2)?;
-        let bytes = target.memory().get(offset, size as usize).map_trap()?;
+        let bytes = target.memory().get(offset, size as usize)?;
         target
             .table()
             .insert(key, Raw::default(bytes).into())

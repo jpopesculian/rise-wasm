@@ -1,8 +1,9 @@
 use crate::storage::{StorageVal, StorageValType};
+use crate::utils::errors::{ErrInto, RuntimeError};
 use alloc::prelude::*;
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryFrom;
-use wasmi::memory_units::Pages;
+use wasmi::memory_units::{ByteSize, Pages};
 use wasmi::{Error, LittleEndianConvert, MemoryInstance, MemoryRef, ValueError};
 
 #[derive(Debug, Clone)]
@@ -25,40 +26,48 @@ impl MemoryWrapper {
         &self.0
     }
 
-    pub fn get_value<T: LittleEndianConvert>(&self, offset: u32) -> Result<T, Error> {
-        self.borrow().get_value::<T>(offset)
+    pub fn get_value<T: LittleEndianConvert>(&self, offset: u32) -> Result<T, RuntimeError> {
+        self.borrow().get_value::<T>(offset).err_into()
     }
 
-    pub fn set_value<T: LittleEndianConvert>(&self, offset: u32, value: T) -> Result<(), Error> {
-        self.borrow().set_value::<T>(offset, value)
+    pub fn set_value<T: LittleEndianConvert>(
+        &self,
+        offset: u32,
+        value: T,
+    ) -> Result<(), RuntimeError> {
+        self.borrow().set_value::<T>(offset, value).err_into()
     }
 
-    pub fn get_dyn_value<T: DynLittleEndianConvert>(&self, offset: u32) -> Result<T, Error> {
+    pub fn get_dyn_value<T: DynLittleEndianConvert>(&self, offset: u32) -> Result<T, RuntimeError> {
         let (new_offset, descriptor) = T::from_little_endian_info(self.raw(), offset)?;
         let size = (descriptor.length * descriptor.elem_size) as usize;
         let slice = self.get(new_offset, size)?;
         T::from_little_endian(&slice, descriptor)
-            .map_err(|_| Error::Value("Could not convert from little endian".to_string()))
+            .map_err(|_| RuntimeError::new("Could not convert from little endian"))
     }
 
     pub fn set_dyn_value<T: DynLittleEndianConvert>(
         &self,
         offset: u32,
         value: T,
-    ) -> Result<u32, Error> {
+    ) -> Result<u32, RuntimeError> {
         let size = value.to_little_endian_info();
         let mut bytes = self.get(offset, size)?;
         value.into_little_endian(&mut bytes, offset);
-        self.set(offset, &bytes);
+        self.set(offset, &bytes)?;
         Ok(size as u32)
     }
 
-    pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
-        self.borrow().get(offset, size)
+    pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, RuntimeError> {
+        self.borrow().get(offset, size).err_into()
     }
 
-    pub fn set(&self, offset: u32, value: &[u8]) -> Result<(), Error> {
-        self.borrow().set(offset, value)
+    pub fn set(&self, offset: u32, value: &[u8]) -> Result<(), RuntimeError> {
+        self.borrow().set(offset, value).err_into()
+    }
+
+    pub fn max_offset(&self) -> u32 {
+        (Pages::byte_size().0 * self.raw().current_size().0) as u32
     }
 }
 
@@ -75,8 +84,8 @@ pub trait MemoryVal {
     fn vec(&self) -> Vec<u8> {
         self.bytes().to_vec()
     }
-    fn string(&self) -> Result<String, String> {
-        Err("Could not convert to String".to_string())
+    fn string(&self) -> Result<String, RuntimeError> {
+        Err(RuntimeError::new("Could not convert to String"))
     }
     fn descriptor(&self) -> &MemoryDescriptor;
     fn len(&self) -> u32 {
@@ -94,10 +103,13 @@ pub trait DynLittleEndianConvert: MemoryVal + Sized {
     fn from_little_endian_info(
         memory: MemoryRef,
         offset: u32,
-    ) -> Result<(u32, MemoryDescriptor), Error>;
+    ) -> Result<(u32, MemoryDescriptor), RuntimeError>;
     fn to_little_endian_info(&self) -> usize;
     fn into_little_endian(self, buffer: &mut [u8], _offset: u32);
-    fn from_little_endian(buffer: &[u8], descriptor: MemoryDescriptor) -> Result<Self, ValueError> {
+    fn from_little_endian(
+        buffer: &[u8],
+        descriptor: MemoryDescriptor,
+    ) -> Result<Self, RuntimeError> {
         let mut result = Vec::<u8>::new();
         buffer.clone_into(&mut result);
         Ok(Self::new(result, descriptor))
@@ -121,7 +133,7 @@ impl DynLittleEndianConvert for Utf16String {
     fn from_little_endian_info(
         memory: MemoryRef,
         offset: u32,
-    ) -> Result<(u32, MemoryDescriptor), Error> {
+    ) -> Result<(u32, MemoryDescriptor), RuntimeError> {
         let size = memory.get(offset, 4).map(|s| LittleEndian::read_u32(&s))?;
         let descriptor = MemoryDescriptor {
             length: size,
@@ -152,12 +164,12 @@ impl MemoryVal for Utf16String {
         &self.0
     }
 
-    fn string(&self) -> Result<String, String> {
+    fn string(&self) -> Result<String, RuntimeError> {
         let len = self.bytes().len() / 2;
         let mut dest = Vec::<u16>::with_capacity(len);
         dest.resize(len, 0);
         LittleEndian::read_u16_into(self.bytes(), &mut dest);
-        String::from_utf16(&dest).map_err(|_| "Failed to decode from utf16".to_string())
+        String::from_utf16(&dest).map_err(|_| RuntimeError::new("Failed to decode from utf16"))
     }
 
     fn descriptor(&self) -> &MemoryDescriptor {
@@ -170,19 +182,21 @@ impl MemoryVal for Utf16String {
 }
 
 impl TryFrom<Raw> for Utf16String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: Raw) -> Result<Utf16String, Self::Error> {
         match val.elem_size() {
             1 => Ok(Utf16String::from(Utf8String::try_from(val)?)),
             2 => {
                 if val.size() % 2 != 0 {
-                    Err("Array does not have an even number of bytes".to_string())
+                    Err(RuntimeError::new(
+                        "Array does not have an even number of bytes",
+                    ))
                 } else {
                     Ok(Utf16String::default(val.vec()))
                 }
             }
-            _ => Err("Invalid element size".to_string()),
+            _ => Err(RuntimeError::new("Invalid element size")),
         }
     }
 }
@@ -204,7 +218,7 @@ impl From<Utf8String> for Utf16String {
 }
 
 impl TryFrom<Array> for Utf16String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: Array) -> Result<Utf16String, Self::Error> {
         Utf16String::try_from(Raw::from(val))
@@ -212,7 +226,7 @@ impl TryFrom<Array> for Utf16String {
 }
 
 impl TryFrom<TypedArray> for Utf16String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: TypedArray) -> Result<Utf16String, Self::Error> {
         Utf16String::try_from(Raw::from(val))
@@ -220,7 +234,7 @@ impl TryFrom<TypedArray> for Utf16String {
 }
 
 impl TryFrom<StorageVal> for Utf16String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: StorageVal) -> Result<Utf16String, Self::Error> {
         match val.val_type {
@@ -250,7 +264,7 @@ impl DynLittleEndianConvert for Utf8String {
     fn from_little_endian_info(
         memory: MemoryRef,
         offset: u32,
-    ) -> Result<(u32, MemoryDescriptor), Error> {
+    ) -> Result<(u32, MemoryDescriptor), RuntimeError> {
         let size = memory.get(offset, 4).map(|s| LittleEndian::read_u32(&s))?;
         let descriptor = MemoryDescriptor {
             length: size,
@@ -281,9 +295,9 @@ impl MemoryVal for Utf8String {
         &self.0
     }
 
-    fn string(&self) -> Result<String, String> {
+    fn string(&self) -> Result<String, RuntimeError> {
         String::from_utf8(self.bytes().to_vec())
-            .map_err(|_| "Failed to decode from utf8".to_string())
+            .map_err(|_| RuntimeError::new("Failed to decode from utf8"))
     }
 
     fn descriptor(&self) -> &MemoryDescriptor {
@@ -296,19 +310,19 @@ impl MemoryVal for Utf8String {
 }
 
 impl TryFrom<Raw> for Utf8String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: Raw) -> Result<Utf8String, Self::Error> {
         match val.elem_size() {
             1 => Ok(Utf8String::default(val.vec())),
             2 => Utf8String::try_from(Utf16String::try_from(val)?),
-            _ => Err("Invalid element size".to_string()),
+            _ => Err(RuntimeError::new("Invalid element size")),
         }
     }
 }
 
 impl TryFrom<Array> for Utf8String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: Array) -> Result<Utf8String, Self::Error> {
         Utf8String::try_from(Raw::from(val))
@@ -316,7 +330,7 @@ impl TryFrom<Array> for Utf8String {
 }
 
 impl TryFrom<TypedArray> for Utf8String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: TypedArray) -> Result<Utf8String, Self::Error> {
         Utf8String::try_from(Raw::from(val))
@@ -324,14 +338,16 @@ impl TryFrom<TypedArray> for Utf8String {
 }
 
 impl TryFrom<Utf16String> for Utf8String {
-    type Error = String;
+    type Error = RuntimeError;
     fn try_from(val: Utf16String) -> Result<Utf8String, Self::Error> {
         let mut result = Vec::<u8>::new();
         let bytes = val.bytes();
         for (i, byte) in bytes.iter().enumerate().step_by(2) {
-            let next: u8 = *bytes.get(i + 1).ok_or("String not divisible by two")?;
+            let next: u8 = *bytes
+                .get(i + 1)
+                .ok_or(RuntimeError::new("String not divisible by two"))?;
             if next != 0 {
-                return Err("String not valid utf8".to_string());
+                return Err(RuntimeError::new("String not valid utf8"));
             }
             result.push(*byte);
         }
@@ -340,7 +356,7 @@ impl TryFrom<Utf16String> for Utf8String {
 }
 
 impl TryFrom<StorageVal> for Utf8String {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: StorageVal) -> Result<Utf8String, Self::Error> {
         match val.val_type {
@@ -400,7 +416,7 @@ impl DynLittleEndianConvert for Array {
     fn from_little_endian_info(
         memory: MemoryRef,
         offset: u32,
-    ) -> Result<(u32, MemoryDescriptor), Error> {
+    ) -> Result<(u32, MemoryDescriptor), RuntimeError> {
         let size_offset = memory.get(offset, 4).map(|s| LittleEndian::read_u32(&s))?;
         let size = memory
             .get(size_offset, 4)
@@ -438,7 +454,7 @@ impl DynLittleEndianConvert for Array {
 }
 
 impl TryFrom<StorageVal> for Array {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: StorageVal) -> Result<Array, Self::Error> {
         match val.val_type {
@@ -479,11 +495,11 @@ impl From<TypedArray> for Array {
 pub struct TypedArray(Vec<u8>, MemoryDescriptor);
 
 impl TypedArray {
-    pub fn with_elem_size(data: Vec<u8>, elem_size: u32) -> Result<TypedArray, String> {
+    pub fn with_elem_size(data: Vec<u8>, elem_size: u32) -> Result<TypedArray, RuntimeError> {
         let length = data.len() as u32;
         if TypedArray::valid_elem_size(elem_size) {
             if length % elem_size != 0 {
-                Err("Data cannot be split into element size".to_string())
+                Err(RuntimeError::new("Data cannot be split into element size"))
             } else {
                 Ok(TypedArray::new(
                     data,
@@ -491,14 +507,14 @@ impl TypedArray {
                 ))
             }
         } else {
-            Err("Elem size must be a multiple of 2".to_string())
+            Err(RuntimeError::new("Elem size must be a multiple of 2"))
         }
     }
 
-    pub fn resize(&mut self, elem_size: u32) -> Result<(), String> {
+    pub fn resize(&mut self, elem_size: u32) -> Result<(), RuntimeError> {
         if TypedArray::valid_elem_size(elem_size) {
             if self.size() % elem_size != 0 {
-                Err("Data cannot be split into element size".to_string())
+                Err(RuntimeError::new("Data cannot be split into element size"))
             } else {
                 self.1 = MemoryDescriptor {
                     length: self.size() / elem_size,
@@ -507,7 +523,7 @@ impl TypedArray {
                 Ok(())
             }
         } else {
-            Err("Elem size must be a multiple of 2".to_string())
+            Err(RuntimeError::new("Elem size must be a multiple of 2"))
         }
     }
 
@@ -553,7 +569,7 @@ impl DynLittleEndianConvert for TypedArray {
     fn from_little_endian_info(
         memory: MemoryRef,
         offset: u32,
-    ) -> Result<(u32, MemoryDescriptor), Error> {
+    ) -> Result<(u32, MemoryDescriptor), RuntimeError> {
         let arr_offset = memory.get(offset, 4).map(|s| LittleEndian::read_u32(&s))?;
         let byte_offset = memory
             .get(offset + 4, 4)
@@ -590,7 +606,7 @@ impl DynLittleEndianConvert for TypedArray {
 }
 
 impl TryFrom<StorageVal> for TypedArray {
-    type Error = String;
+    type Error = RuntimeError;
 
     fn try_from(val: StorageVal) -> Result<TypedArray, Self::Error> {
         match val.val_type {
@@ -604,45 +620,45 @@ impl TryFrom<StorageVal> for TypedArray {
 }
 
 impl TryFrom<Raw> for TypedArray {
-    type Error = String;
+    type Error = RuntimeError;
     fn try_from(val: Raw) -> Result<TypedArray, Self::Error> {
         if TypedArray::valid_elem_size(val.descriptor().elem_size) {
             Ok(TypedArray::new(val.vec(), val.descriptor().clone()))
         } else {
-            Err("Elem size must be a multiple of 2".to_string())
+            Err(RuntimeError::new("Elem size must be a multiple of 2"))
         }
     }
 }
 
 impl TryFrom<Utf8String> for TypedArray {
-    type Error = String;
+    type Error = RuntimeError;
     fn try_from(val: Utf8String) -> Result<TypedArray, Self::Error> {
         if TypedArray::valid_elem_size(val.descriptor().elem_size) {
             Ok(TypedArray::new(val.vec(), val.descriptor().clone()))
         } else {
-            Err("Elem size must be a multiple of 2".to_string())
+            Err(RuntimeError::new("Elem size must be a multiple of 2"))
         }
     }
 }
 
 impl TryFrom<Utf16String> for TypedArray {
-    type Error = String;
+    type Error = RuntimeError;
     fn try_from(val: Utf16String) -> Result<TypedArray, Self::Error> {
         if TypedArray::valid_elem_size(val.descriptor().elem_size) {
             Ok(TypedArray::new(val.vec(), val.descriptor().clone()))
         } else {
-            Err("Elem size must be a multiple of 2".to_string())
+            Err(RuntimeError::new("Elem size must be a multiple of 2"))
         }
     }
 }
 
 impl TryFrom<Array> for TypedArray {
-    type Error = String;
+    type Error = RuntimeError;
     fn try_from(val: Array) -> Result<TypedArray, Self::Error> {
         if TypedArray::valid_elem_size(val.descriptor().elem_size) {
             Ok(TypedArray::new(val.vec(), val.descriptor().clone()))
         } else {
-            Err("Elem size must be a multiple of 2".to_string())
+            Err(RuntimeError::new("Elem size must be a multiple of 2"))
         }
     }
 }

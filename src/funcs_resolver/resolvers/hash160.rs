@@ -27,10 +27,10 @@ impl<T: ResolverTarget> FuncResolver<T> for Hash160Resolver {
         let src = args.nth_checked(0)?;
         let dest = args.nth_checked(1)?;
         let memory = target.memory();
-        let val: TypedArray = memory.get_dyn_value(src).map_trap()?;
+        let val: TypedArray = memory.get_dyn_value(src)?;
         let hash: JsBuffer = hash160(val.bytes()).into_serde().map_trap()?;
         let result = TypedArray::default(hash.to_vec());
-        let size = memory.set_dyn_value(dest, result).map_trap()?;
+        let size = memory.set_dyn_value(dest, result)?;
         Ok(Some(RuntimeValue::I32(size as i32)))
     }
 

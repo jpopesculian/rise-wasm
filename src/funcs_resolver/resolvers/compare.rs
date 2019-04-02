@@ -1,6 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::memory::{MemoryVal, TypedArray};
-use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
@@ -27,8 +26,8 @@ impl<T: ResolverTarget> FuncResolver<T> for CompareResolver {
         let left_ptr = args.nth_checked(0)?;
         let right_ptr = args.nth_checked(1)?;
         let memory = target.memory();
-        let left: TypedArray = memory.get_dyn_value(left_ptr).map_trap()?;
-        let right: TypedArray = memory.get_dyn_value(right_ptr).map_trap()?;
+        let left: TypedArray = memory.get_dyn_value(left_ptr)?;
+        let right: TypedArray = memory.get_dyn_value(right_ptr)?;
         let is_equal = compare(left.bytes(), right.bytes());
         Ok(Some(RuntimeValue::I32(if is_equal { 1 } else { 0 })))
     }

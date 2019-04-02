@@ -2,7 +2,8 @@
     alloc,
     associated_type_defaults,
     refcell_replace_swap,
-    toowned_clone_into
+    toowned_clone_into,
+    optin_builtin_traits
 )]
 #![no_std]
 
@@ -14,6 +15,7 @@ extern crate hashbrown;
 extern crate hex;
 extern crate hex_serde;
 extern crate serde;
+extern crate serde_json;
 extern crate wasm_bindgen;
 extern crate wasmi;
 
@@ -23,6 +25,7 @@ use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::*;
 use wasmi::{ImportsBuilder, ModuleInstance};
 
+mod allocator;
 mod funcs_resolver;
 mod gas_middleware;
 mod imports;

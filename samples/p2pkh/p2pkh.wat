@@ -1,4 +1,6 @@
 (module
+  (func $mem_init
+    (import "env" "mem_init_arena") (param i32))
   (func $hash
     (import "env" "hash160") (param i32) (param i32) (result i32))
   (func $hex_decode
@@ -18,6 +20,7 @@
     (local $pubkey_ptr i32)
     (local $pubhash_ptr i32)
     (local $localhash_ptr i32)
+    (call $mem_init (i32.const 64))
     (set_local $sig_ptr (i32.const 256))
     (set_local $pubkey_ptr (i32.const 512))
     (set_local $pubhash_ptr (i32.const 768))

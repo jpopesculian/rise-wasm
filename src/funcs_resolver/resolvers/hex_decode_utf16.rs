@@ -22,10 +22,10 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf16Resolver {
         let src = args.nth_checked(0)?;
         let dest = args.nth_checked(1)?;
         let memory = target.memory();
-        let val: Utf16String = memory.get_dyn_value(src).map_trap()?;
-        let string_rep = val.string().map_trap()?;
+        let val: Utf16String = memory.get_dyn_value(src)?;
+        let string_rep = val.string()?;
         let decoded = TypedArray::default(hex::decode(string_rep).map_trap()?);
-        let size = memory.set_dyn_value(dest, decoded).map_trap()?;
+        let size = memory.set_dyn_value(dest, decoded)?;
         Ok(Some(RuntimeValue::I32(size as i32)))
     }
 

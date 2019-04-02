@@ -22,8 +22,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreTypedArrayResolver {
         let key: u32 = args.nth_checked(0)?;
         let offset: u32 = args.nth_checked(1)?;
         let elem_size: u32 = args.nth_checked(2)?;
-        let mut val: TypedArray = target.memory().get_dyn_value(offset).map_trap()?;
-        val.resize(elem_size).map_trap()?;
+        let mut val: TypedArray = target.memory().get_dyn_value(offset)?;
+        val.resize(elem_size)?;
         target
             .table()
             .insert(key, val.into())

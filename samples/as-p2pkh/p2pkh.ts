@@ -1,4 +1,4 @@
-import "allocator/arena";
+import "../../assembly/allocators/arena";
 
 @external("env", "hash160")
 declare function hash(src: Uint8Array, dest: Uint8Array): u32;

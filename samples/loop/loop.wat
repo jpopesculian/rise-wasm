@@ -1,4 +1,6 @@
 (module
+  (func $mem_init
+    (import "env" "mem_init_arena") (param i32))
   (func $load
     (import "env" "table_load_mem") (param i32) (param i32) (result i32))
   (import "env" "memory" (memory 1))
@@ -9,6 +11,7 @@
   (func $main
     (local $loop-left i32)
     (local $loop-ptr i32)
+    (call $mem_init (i32.const 0))
     (set_local $loop-ptr (i32.const 0))
     (drop (call $load (i32.const 0) (get_local $loop-ptr)))
     (set_local $loop-left (i32.load (get_local $loop-ptr)))

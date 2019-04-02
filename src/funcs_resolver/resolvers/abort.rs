@@ -6,12 +6,15 @@ pub struct AbortResolver;
 
 impl<T: ResolverTarget> FuncResolver<T> for AbortResolver {
     fn signature(&self, _: &Signature) -> Signature {
-        Signature::new(&[
-            ValueType::I32, // msg
-            ValueType::I32, // file
-            ValueType::I32, // line
-            ValueType::I32, // column
-        ][..], None)
+        Signature::new(
+            &[
+                ValueType::I32, // msg
+                ValueType::I32, // file
+                ValueType::I32, // line
+                ValueType::I32, // column
+            ][..],
+            None,
+        )
     }
 
     fn run(&self, _: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {

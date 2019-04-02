@@ -21,8 +21,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TableLoadTypedArrayResolver {
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let key: u32 = args.nth_checked(0)?;
         let offset: u32 = args.nth_checked(1)?;
-        let val: TypedArray = target.table().get(&key).map_trap()?.try_into().map_trap()?;
-        let size = target.memory().set_dyn_value(offset, val).map_trap()?;
+        let val: TypedArray = target.table().get(&key).map_trap()?.try_into()?;
+        let size = target.memory().set_dyn_value(offset, val)?;
         Ok(Some(RuntimeValue::I32(size as i32)))
     }
 

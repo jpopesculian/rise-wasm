@@ -20,7 +20,7 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreArrayResolver {
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let key: u32 = args.nth_checked(0)?;
         let offset: u32 = args.nth_checked(1)?;
-        let val: Array = target.memory().get_dyn_value(offset).map_trap()?;
+        let val: Array = target.memory().get_dyn_value(offset)?;
         target
             .table()
             .insert(key, val.into())

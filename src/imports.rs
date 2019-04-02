@@ -1,5 +1,6 @@
 use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
 use super::MemoryWrapper;
+use crate::allocator::{AllocatorRef, UnitializedAllocator};
 use crate::storage::TableStorage;
 use alloc::prelude::*;
 use alloc::rc::Rc;
@@ -13,6 +14,7 @@ pub struct ImportResolver {
     table: TableStorage,
     resolvers: Rc<FuncsResolverBuilder<ImportResolver>>,
     memory: MemoryWrapper,
+    allocator: AllocatorRef,
 }
 
 impl Externals for ImportResolver {
@@ -35,6 +37,7 @@ impl ImportResolver {
             resolvers,
             table,
             memory,
+            allocator: UnitializedAllocator::new(),
         }
     }
 }
@@ -46,6 +49,14 @@ impl ResolverTarget for ImportResolver {
 
     fn memory(&self) -> MemoryWrapper {
         self.memory.clone()
+    }
+
+    fn allocator(&self) -> AllocatorRef {
+        self.allocator.clone()
+    }
+
+    fn set_allocator(&mut self, allocator: AllocatorRef) {
+        self.allocator = allocator
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::memory::{MemoryDescriptor, MemoryVal};
+use crate::utils::errors::RuntimeError;
 use alloc::prelude::*;
 use alloc::rc::Rc;
 use core::cell::RefCell;
@@ -63,10 +64,10 @@ impl TableStorage {
         }
     }
 
-    pub fn insert(&self, index: u32, val: StorageVal) -> Result<(), String> {
+    pub fn insert(&self, index: u32, val: StorageVal) -> Result<(), RuntimeError> {
         let val_size = val.data.len();
         if *self.size.borrow() + val_size > self.max_size {
-            return Err("Table overflow!".to_string());
+            return Err(RuntimeError::new("Table overflow!"));
         }
         self.size.replace_with(|&mut old_size| old_size + val_size);
         self.values.borrow_mut().insert(index, val);

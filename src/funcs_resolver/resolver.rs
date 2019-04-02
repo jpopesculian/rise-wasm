@@ -1,3 +1,4 @@
+use crate::allocator::AllocatorRef;
 use crate::memory::MemoryWrapper;
 use crate::storage::TableStorage;
 use core::fmt;
@@ -6,6 +7,8 @@ use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 pub trait ResolverTarget {
     fn memory(self: &Self) -> MemoryWrapper;
     fn table(self: &Self) -> TableStorage;
+    fn allocator(self: &Self) -> AllocatorRef;
+    fn set_allocator(self: &mut Self, allocator: AllocatorRef);
 }
 
 pub trait FuncResolver<T> {

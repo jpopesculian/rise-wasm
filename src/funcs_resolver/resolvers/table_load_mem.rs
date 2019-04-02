@@ -20,7 +20,7 @@ impl<T: ResolverTarget> FuncResolver<T> for TableLoadMemResolver {
         let key: u32 = args.nth_checked(0)?;
         let offset: u32 = args.nth_checked(1)?;
         let val = target.table().get(&key).map_trap()?;
-        target.memory().set(offset, val.bytes()).map_trap()?;
+        target.memory().set(offset, val.bytes())?;
         Ok(Some(RuntimeValue::I32(val.size() as i32)))
     }
 
