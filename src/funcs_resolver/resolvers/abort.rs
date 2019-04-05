@@ -1,6 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::funcs_resolver::utils::ResolverUtils;
-use crate::memory::{MemoryVal, Utf16String};
+use crate::memory::Utf16String;
 use crate::utils::errors::RuntimeError;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};

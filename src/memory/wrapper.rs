@@ -1,10 +1,6 @@
-use super::{StorageVal, StorageValType};
+use super::StorageValType;
 use crate::utils::errors::{ErrInto, RuntimeError};
-use crate::utils::js_buffer::JsBuffer;
 use alloc::prelude::*;
-use byteorder::{ByteOrder, LittleEndian};
-use core::convert::TryFrom;
-use wasm_bindgen::prelude::*;
 use wasmi::memory_units::{ByteSize, Pages};
 use wasmi::{LittleEndianConvert, MemoryInstance, MemoryRef};
 

@@ -8,6 +8,7 @@ use core::cell::RefCell;
 use core::fmt;
 
 pub use arena::ArenaAllocator;
+pub use buddy::BuddyAllocator;
 pub use uninitialized::UninitializedAllocator;
 
 pub trait Allocator: fmt::Debug {

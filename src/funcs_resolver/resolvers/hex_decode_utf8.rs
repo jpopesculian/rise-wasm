@@ -1,6 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
 use crate::funcs_resolver::utils::ResolverUtils;
-use crate::memory::{MemoryVal, TypedArray, Utf8String};
+use crate::memory::{TypedArray, Utf8String};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use hex;

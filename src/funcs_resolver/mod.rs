@@ -22,6 +22,7 @@ pub fn build_funcs_resolver<T: ResolverTarget>() -> Rc<FuncsResolverBuilder<T>> 
             .push("mem_free", MemFreeResolver::build())
             .push("mem_reset", MemResetResolver::build())
             .push("mem_init_arena", MemInitArenaResolver::build())
+            .push("mem_init_buddy", MemInitBuddyResolver::build())
             .push("table_load_arr", TableLoadArrayResolver::build())
             .push("table_load_mem", TableLoadMemResolver::build())
             .push("table_load_typed_arr", TableLoadTypedArrayResolver::build())

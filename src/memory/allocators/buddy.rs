@@ -1,12 +1,13 @@
 use super::{Allocator, AllocatorRef};
 use crate::utils::errors::RuntimeError;
-use alloc::prelude::*;
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use core::cmp::max;
+use core::cmp::{max, PartialEq};
+use core::fmt;
+use core::iter::Iterator;
 use hashbrown::HashMap;
 
-const BASE_ORDER: u8 = 8;
+const BASE_ORDER: u8 = 7; // 128
 const MIN_ORDER: u8 = 4; // 4096
 
 #[derive(Debug, PartialEq)]
@@ -16,25 +17,51 @@ pub struct BuddyAllocator {
     max_order: u8,
 }
 
+impl Allocator for BuddyAllocator {
+    fn allocate(&mut self, size: u32) -> Result<u32, RuntimeError> {
+        if let Some(node) = self.find_free_node(size) {
+            node.claim();
+            Ok(self.get_offset_by_node_id(node.get_id()))
+        } else {
+            Err(RuntimeError::new("Heap out of space"))
+        }
+    }
+
+    fn free(&mut self, ptr: u32) -> Result<(), RuntimeError> {
+        if let Some(node) = self.find_node_by_offset(ptr) {
+            node.free();
+            self.recursive_merge(&node);
+            Ok(())
+        } else {
+            Err(RuntimeError::new("Invalid pointer"))
+        }
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        self.node_list = NodeRef::new(0, self.max_order);
+        Ok(())
+    }
+}
+
 impl BuddyAllocator {
-    pub fn new(heap_base: u32, max_offset: u32) -> Result<BuddyAllocator, RuntimeError> {
+    pub fn new(heap_base: u32, max_offset: u32) -> Result<AllocatorRef, RuntimeError> {
         let size = max_offset - heap_base;
         let max_order = largest_order(size) - BASE_ORDER;
         if max_order < MIN_ORDER {
             return Err(RuntimeError::new("Heap size is too small"));
         }
-        Ok(BuddyAllocator {
+        Ok(AllocatorRef(Rc::new(RefCell::new(BuddyAllocator {
             heap_base,
             node_list: NodeRef::new(0, max_order),
             max_order,
-        })
+        }))))
     }
 
-    pub fn find_free_node(&mut self, size: u32) -> Option<NodeRef> {
+    fn find_free_node(&mut self, size: u32) -> Option<NodeRef> {
         let order = self.size_to_order(size);
         let mut node = self.node_list.clone();
         while !node.is_free() || node.get_order() != order {
-            if node.is_free() {
+            if node.is_free() && node.get_order() < order {
                 node.split();
             } else if let Some(next) = node.next() {
                 node = next.clone();
@@ -45,12 +72,52 @@ impl BuddyAllocator {
         Some(node)
     }
 
-    pub fn size_to_order(&self, size: u32) -> u8 {
-        self.max_order - (smallest_order(size) - BASE_ORDER)
+    fn recursive_merge(&mut self, node: &NodeRef) {
+        let mut buddy = node.get_buddy();
+        while {
+            if let Some(buddy) = buddy.clone() {
+                buddy.is_free() && buddy.get_order() == node.get_order()
+            } else {
+                false
+            }
+        } {
+            node.merge();
+            buddy = node.get_buddy();
+        }
     }
 
-    pub fn order_to_size(&self, order: u8) -> u32 {
-        1 << (self.max_order - order + BASE_ORDER)
+    fn find_node_by_offset(&self, offset: u32) -> Option<NodeRef> {
+        if !self.valid_offset(offset) {
+            return None;
+        }
+        let id = self.get_node_id_by_offset(offset);
+        for node in self.node_list.iter() {
+            let node_id = node.get_id();
+            if node_id == id {
+                return Some(node);
+            } else if node_id > id {
+                return None;
+            }
+        }
+        None
+    }
+
+    fn valid_offset(&self, offset: u32) -> bool {
+        let bits = offset - self.heap_base;
+        let mask = (1 << BASE_ORDER) - 1;
+        bits & mask == 0
+    }
+
+    fn get_node_id_by_offset(&self, offset: u32) -> u32 {
+        (offset - self.heap_base) >> BASE_ORDER
+    }
+
+    fn get_offset_by_node_id(&self, id: u32) -> u32 {
+        (id << BASE_ORDER) + self.heap_base
+    }
+
+    fn size_to_order(&self, size: u32) -> u8 {
+        self.max_order - max(smallest_order(size) as i8 - BASE_ORDER as i8, 0) as u8
     }
 }
 
@@ -62,10 +129,9 @@ fn largest_order(n: u32) -> u8 {
     (n as f64).log2().floor() as u8
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 struct NodeRef(Rc<RefCell<Node>>);
 
-#[derive(Debug, PartialEq)]
 struct Node {
     pub next: Option<NodeRef>,
     pub prev: Option<NodeRef>,
@@ -74,6 +140,48 @@ struct Node {
     pub order: u8,
     pub max_order: u8,
     pub id: u32,
+}
+
+struct NodeIter(Option<NodeRef>);
+
+impl fmt::Debug for NodeRef {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Ref {{ {:?} }}", self.0.borrow())
+    }
+}
+
+impl fmt::Debug for Node {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Node {{ prev: {:?}, id: {}, order: {}, free: {}, next: {:?} }}",
+            self.prev.clone().map(|n| n.get_id()),
+            self.id,
+            self.order,
+            self.free,
+            self.next.clone().map(|n| n.get_id())
+        )
+    }
+}
+
+impl Iterator for NodeIter {
+    type Item = NodeRef;
+
+    fn next(&mut self) -> Option<NodeRef> {
+        let current = self.0.clone();
+        if let Some(node) = current {
+            self.0 = node.next();
+            Some(node)
+        } else {
+            None
+        }
+    }
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Node) -> bool {
+        self.id == other.id
+    }
 }
 
 impl NodeRef {
@@ -97,11 +205,15 @@ impl NodeRef {
         self.0.borrow().prev.clone()
     }
 
-    pub fn set_next(&self, next: Option<NodeRef>) {
+    pub fn iter(&self) -> NodeIter {
+        NodeIter(Some(self.clone()))
+    }
+
+    fn set_next(&self, next: Option<NodeRef>) {
         self.0.borrow_mut().next = next
     }
 
-    pub fn set_prev(&self, prev: Option<NodeRef>) {
+    fn set_prev(&self, prev: Option<NodeRef>) {
         self.0.borrow_mut().prev = prev
     }
 
@@ -113,7 +225,7 @@ impl NodeRef {
             .map(Clone::clone)
     }
 
-    pub fn insert_buddy(&self, order: u8, buddy: NodeRef) {
+    fn insert_buddy(&self, order: u8, buddy: NodeRef) {
         let _ = self.0.borrow_mut().buddies.insert(order, buddy);
     }
 
@@ -129,7 +241,7 @@ impl NodeRef {
         self.0.borrow_mut().free = false
     }
 
-    pub fn max_order(&self) -> u8 {
+    fn max_order(&self) -> u8 {
         self.0.borrow().max_order
     }
 
@@ -137,34 +249,16 @@ impl NodeRef {
         self.0.borrow().order
     }
 
-    pub fn set_order(&self, order: u8) {
+    fn set_order(&self, order: u8) {
         self.0.borrow_mut().order = order
     }
 
-    pub fn set_id(&self, id: u32) {
+    fn set_id(&self, id: u32) {
         self.0.borrow_mut().id = id
     }
 
     pub fn get_id(&self) -> u32 {
         self.0.borrow().id
-    }
-
-    pub fn tree_string(&self) -> String {
-        let mut result = String::from("");
-        let mut node = self.clone();
-        while node.prev() != None {
-            node = node.prev().unwrap();
-        }
-        result = format!("{}, {}", result, node.to_string());
-        while node.next() != None {
-            node = node.next().unwrap();
-            result = format!("{}, {}", result, node.to_string());
-        }
-        result
-    }
-
-    pub fn to_string(&self) -> String {
-        format!("Node<id: {}, order: {}>", self.get_id(), self.get_order())
     }
 
     pub fn split(&self) {
@@ -220,28 +314,19 @@ impl NodeRef {
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
-    #[test]
-    fn test_largest_order() {
-        assert_eq!(largest_order(0), 0);
-        assert_eq!(largest_order(1), 0);
-        assert_eq!(largest_order(2), 1);
-        assert_eq!(largest_order(10), 3);
-        assert_eq!(largest_order(8), 3);
-        assert_eq!(largest_order(130), 7);
-    }
-
-    #[test]
-    fn test_smallest_order() {
-        assert_eq!(smallest_order(0), 0);
-        assert_eq!(smallest_order(1), 0);
-        assert_eq!(smallest_order(2), 1);
-        assert_eq!(smallest_order(10), 4);
-        assert_eq!(smallest_order(8), 3);
-        assert_eq!(smallest_order(130), 8);
-    }
+    // fn tree_string(node: &NodeRef) -> String {
+    //     let mut result = String::from("");
+    //     let mut node = node.clone();
+    //     while node.prev() != None {
+    //         node = node.prev().unwrap();
+    //     }
+    //     for n in node.iter() {
+    //         result = format!("{} -> {:?}", result, n);
+    //     }
+    //     result
+    // }
 
     #[test]
     fn node_ref_split() {
@@ -280,28 +365,38 @@ mod tests {
         buddy.merge();
         buddy.get_buddy().unwrap().merge();
         node.merge();
-        panic!("{}", node.tree_string());
     }
 
     #[test]
-    fn allocator_new() {
-        let allocator = BuddyAllocator::new(1000, 10000).unwrap();
-        assert_eq!(
-            allocator,
-            BuddyAllocator {
-                heap_base: 1000,
-                node_list: NodeRef::new(0, 5),
-                max_order: 5
-            }
-        );
-    }
-
-    #[test]
-    fn find_free_node() {
+    fn allocate() {
         let mut allocator = BuddyAllocator::new(1000, 10000).unwrap();
-        let node = allocator.find_free_node(400);
+        assert_eq!(allocator.allocate(100).unwrap(), 1000);
+        assert_eq!(allocator.allocate(300).unwrap(), 1512);
+        assert_eq!(allocator.allocate(300).unwrap(), 2024);
+        assert_eq!(allocator.allocate(12).unwrap(), 1128);
+        assert_eq!(allocator.allocate(1024).unwrap(), 3048);
     }
 
     #[test]
-    fn bitshift() {}
+    fn free() {
+        let mut allocator = BuddyAllocator::new(1000, 10000).unwrap();
+        let _ = allocator.allocate(100).unwrap();
+        let ptr = allocator.allocate(300).unwrap();
+        let _ = allocator.allocate(300).unwrap();
+        let _ = allocator.allocate(12).unwrap();
+        let _ = allocator.allocate(1024).unwrap();
+        let _ = allocator.free(ptr).unwrap();
+        assert_eq!(allocator.allocate(300).unwrap(), ptr);
+        assert_eq!(allocator.allocate(300).unwrap(), 2536);
+        assert_eq!(allocator.allocate(300).unwrap(), 4072);
+    }
+
+    #[test]
+    fn reset() {
+        let mut allocator = BuddyAllocator::new(1000, 10000).unwrap();
+        let _ = allocator.allocate(100).unwrap();
+        let _ = allocator.allocate(300).unwrap();
+        let _ = allocator.reset().unwrap();
+        assert_eq!(allocator.allocate(100).unwrap(), 1000);
+    }
 }

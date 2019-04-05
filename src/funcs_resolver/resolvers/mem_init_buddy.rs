@@ -1,11 +1,11 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::memory::ArenaAllocator;
+use crate::memory::BuddyAllocator;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct MemInitArenaResolver;
+pub struct MemInitBuddyResolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for MemInitArenaResolver {
+impl<T: ResolverTarget> FuncResolver<T> for MemInitBuddyResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
@@ -18,7 +18,7 @@ impl<T: ResolverTarget> FuncResolver<T> for MemInitArenaResolver {
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let heap_offset = args.nth_checked(0)?;
         let max_offset = target.memory().max_offset();
-        let allocator = ArenaAllocator::new(heap_offset, max_offset);
+        let allocator = BuddyAllocator::new(heap_offset, max_offset)?;
         target.set_allocator(allocator);
         Ok(None)
     }
@@ -28,8 +28,8 @@ impl<T: ResolverTarget> FuncResolver<T> for MemInitArenaResolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for MemInitArenaResolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for MemInitBuddyResolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(MemInitArenaResolver {})
+        Box::new(MemInitBuddyResolver {})
     }
 }
