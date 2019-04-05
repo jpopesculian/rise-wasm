@@ -1,6 +1,4 @@
-use crate::allocator::AllocatorRef;
-use crate::memory::MemoryWrapper;
-use crate::storage::TableStorage;
+use crate::memory::{AllocatorRef, MemoryWrapper, TableStorage};
 use core::fmt;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap};
 

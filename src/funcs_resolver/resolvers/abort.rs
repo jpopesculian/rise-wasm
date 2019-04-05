@@ -1,10 +1,9 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use alloc::prelude::*;
+use crate::funcs_resolver::utils::ResolverUtils;
+use crate::memory::{MemoryVal, Utf16String};
 use crate::utils::errors::RuntimeError;
-use crate::memory::{Utf16String, MemoryVal};
-use crate::utils::map_trap::MapTrap;
-use core::convert::TryFrom;
-use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, TrapKind, ValueType};
+use alloc::prelude::*;
+use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
 pub struct AbortResolver;
 
@@ -22,13 +21,22 @@ impl<T: ResolverTarget> FuncResolver<T> for AbortResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let msg_ptr = args.nth_checked(0)?;
-        let file_ptr = args.nth_checked(1)?;
-        let line: u32 = args.nth_checked(2)?;
-        let column: u32 = args.nth_checked(3)?;
-        let msg = target.memory().get_dyn_value::<Utf16String>(msg_ptr)?.string()?;
-        let file = target.memory().get_dyn_value::<Utf16String>(file_ptr)?.string()?;
-        Err(RuntimeError::new(format!("[{}: {},{}] {}", file, line, column, msg).to_string()).into())
+        let utils = ResolverUtils::new(target, args);
+        let msg: Utf16String = utils.mem_arg(0)?;
+        let file: Utf16String = utils.mem_arg(1)?;
+        let line: u32 = utils.arg(2)?;
+        let column: u32 = utils.arg(3)?;
+        Err(RuntimeError::new(
+            format!(
+                "[{}: {},{}] {}",
+                file.string()?,
+                line,
+                column,
+                msg.string()?
+            )
+            .to_string(),
+        )
+        .into())
     }
 
     fn gas(&self) -> u64 {

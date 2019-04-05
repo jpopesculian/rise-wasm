@@ -1,6 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::ResolverUtils;
 use crate::memory::Raw;
-use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
@@ -19,15 +19,12 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreMemResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let key: u32 = args.nth_checked(0)?;
-        let offset: u32 = args.nth_checked(1)?;
-        let size: u32 = args.nth_checked(2)?;
-        let bytes = target.memory().get(offset, size as usize)?;
-        target
-            .table()
-            .insert(key, Raw::default(bytes).into())
-            .map(|_| None)
-            .map_trap()
+        let utils = ResolverUtils::new(target, args);
+        let key: u32 = utils.arg(0)?;
+        let offset: u32 = utils.arg(1)?;
+        let size: u32 = utils.arg(2)?;
+        let val = Raw::default(target.memory().get(offset, size as usize)?);
+        utils.save(key, val)
     }
 
     fn gas(&self) -> u64 {

@@ -1,4 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::{ResolverUtils, RuntimeBool};
 use crate::memory::{MemoryVal, TypedArray};
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
@@ -23,13 +24,11 @@ impl<T: ResolverTarget> FuncResolver<T> for CompareResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let left_ptr = args.nth_checked(0)?;
-        let right_ptr = args.nth_checked(1)?;
-        let memory = target.memory();
-        let left: TypedArray = memory.get_dyn_value(left_ptr)?;
-        let right: TypedArray = memory.get_dyn_value(right_ptr)?;
-        let is_equal = compare(left.bytes(), right.bytes());
-        Ok(Some(RuntimeValue::I32(if is_equal { 1 } else { 0 })))
+        let utils = ResolverUtils::new(target, args);
+        let left: TypedArray = utils.mem_arg(0)?;
+        let right: TypedArray = utils.mem_arg(1)?;
+        let is_equal: RuntimeBool = compare(left.bytes(), right.bytes()).into();
+        Ok(Some(is_equal.into()))
     }
 
     fn gas(&self) -> u64 {

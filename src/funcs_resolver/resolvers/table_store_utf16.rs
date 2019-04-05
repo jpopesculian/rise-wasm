@@ -1,6 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::ResolverUtils;
 use crate::memory::Utf16String;
-use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
@@ -18,14 +18,10 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreUtf16Resolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let key: u32 = args.nth_checked(0)?;
-        let offset: u32 = args.nth_checked(1)?;
-        let val: Utf16String = target.memory().get_dyn_value(offset)?;
-        target
-            .table()
-            .insert(key, val.into())
-            .map(|_| None)
-            .map_trap()
+        let utils = ResolverUtils::new(target, args);
+        let key: u32 = utils.arg(0)?;
+        let val: Utf16String = utils.mem_arg(1)?;
+        utils.save(key, val)
     }
 
     fn gas(&self) -> u64 {

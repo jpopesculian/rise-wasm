@@ -3,6 +3,7 @@ use alloc::rc::Rc;
 mod builder;
 mod resolver;
 mod resolvers;
+mod utils;
 
 pub use builder::{FuncResolverBuild, FuncsResolverBuilder};
 pub use resolver::{FuncResolver, ResolverTarget};

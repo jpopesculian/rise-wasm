@@ -1,4 +1,4 @@
-use super::errors::{BoxedError, Error, RuntimeError};
+use super::errors::{Error, RuntimeError};
 use alloc::prelude::*;
 use wasmi::Trap;
 

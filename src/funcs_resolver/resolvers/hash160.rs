@@ -1,7 +1,8 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::ResolverUtils;
 use crate::memory::{MemoryVal, TypedArray};
-use crate::utils::{js_buffer::JsBuffer, map_trap::MapTrap};
 use alloc::prelude::*;
+use core::convert::TryInto;
 use wasm_bindgen::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
@@ -23,14 +24,10 @@ impl<T: ResolverTarget> FuncResolver<T> for Hash160Resolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let src = args.nth_checked(0)?;
-        let memory = target.memory();
-        let val: TypedArray = memory.get_dyn_value(src)?;
-        let hash: JsBuffer = hash160(val.bytes()).into_serde().map_trap()?;
-        let result = TypedArray::default(hash.to_vec());
-        let dest = target.allocator().allocate(result.written_size() as u32)?;
-        let _ = memory.set_dyn_value(dest, result)?;
-        Ok(Some(RuntimeValue::I32(dest as i32)))
+        let utils = ResolverUtils::new(target, args);
+        let val: TypedArray = utils.mem_arg(0)?;
+        let hash: TypedArray = hash160(val.bytes()).try_into()?;
+        Ok(Some(utils.send(hash)?.into()))
     }
 
     fn gas(&self) -> u64 {

@@ -1,4 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::ResolverUtils;
 use crate::memory::{MemoryVal, TypedArray, Utf16String};
 use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
@@ -18,14 +19,10 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf16Resolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let src = args.nth_checked(0)?;
-        let memory = target.memory();
-        let val: Utf16String = memory.get_dyn_value(src)?;
-        let string_rep = val.string()?;
-        let decoded = TypedArray::default(hex::decode(string_rep).map_trap()?);
-        let dest = target.allocator().allocate(decoded.written_size() as u32)?;
-        let _ = memory.set_dyn_value(dest, decoded)?;
-        Ok(Some(RuntimeValue::I32(dest as i32)))
+        let utils = ResolverUtils::new(target, args);
+        let val: Utf16String = utils.mem_arg(0)?;
+        let decoded = TypedArray::default(hex::decode(val.string()?).map_trap()?);
+        Ok(Some(utils.send(decoded)?.into()))
     }
 
     fn gas(&self) -> u64 {

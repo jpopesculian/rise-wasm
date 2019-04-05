@@ -9,7 +9,7 @@ impl<T: ResolverTarget> FuncResolver<T> for MemResetResolver {
         Signature::new(&[][..], None)
     }
 
-    fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+    fn run(&self, target: &mut T, _: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         target.allocator().reset()?;
         Ok(None)
     }

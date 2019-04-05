@@ -1,6 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::ResolverUtils;
 use crate::memory::TypedArray;
-use crate::utils::map_trap::MapTrap;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
@@ -11,7 +11,7 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreTypedArrayResolver {
         Signature::new(
             &[
                 ValueType::I32, // key
-                ValueType::I32, // offset
+                ValueType::I32, // ptr
                 ValueType::I32, // elem_size
             ][..],
             None,
@@ -19,16 +19,12 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreTypedArrayResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let key: u32 = args.nth_checked(0)?;
-        let offset: u32 = args.nth_checked(1)?;
-        let elem_size: u32 = args.nth_checked(2)?;
-        let mut val: TypedArray = target.memory().get_dyn_value(offset)?;
+        let utils = ResolverUtils::new(target, args);
+        let key: u32 = utils.arg(0)?;
+        let mut val: TypedArray = utils.mem_arg(1)?;
+        let elem_size: u32 = utils.arg(2)?;
         val.resize(elem_size)?;
-        target
-            .table()
-            .insert(key, val.into())
-            .map(|_| None)
-            .map_trap()
+        utils.save(key, val)
     }
 
     fn gas(&self) -> u64 {

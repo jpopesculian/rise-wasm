@@ -25,20 +25,16 @@ use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::*;
 use wasmi::{ImportsBuilder, ModuleInstance};
 
-mod allocator;
 mod funcs_resolver;
 mod gas_middleware;
 mod imports;
-mod memory;
-mod storage;
+pub mod memory;
 pub mod utils;
 
 use funcs_resolver::build_funcs_resolver;
 use gas_middleware::GasMiddleware;
 use imports::ImportResolver;
-pub use memory::MemoryWrapper;
-use memory::Raw;
-pub use storage::{StorageVal, TableStorage};
+use memory::{MemoryWrapper, Raw, TableStorage};
 use utils::js_buffer::JsBuffer;
 
 use cfg_if::cfg_if;

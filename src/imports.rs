@@ -1,7 +1,5 @@
 use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
-use super::MemoryWrapper;
-use crate::allocator::{AllocatorRef, UnitializedAllocator};
-use crate::storage::TableStorage;
+use crate::memory::{AllocatorRef, MemoryWrapper, TableStorage, UninitializedAllocator};
 use alloc::prelude::*;
 use alloc::rc::Rc;
 use wasmi::{
@@ -37,7 +35,7 @@ impl ImportResolver {
             resolvers,
             table,
             memory,
-            allocator: UnitializedAllocator::new(),
+            allocator: UninitializedAllocator::new(),
         }
     }
 }

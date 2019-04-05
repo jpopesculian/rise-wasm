@@ -1,6 +1,6 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use crate::funcs_resolver::utils::{ResolverUtils, RuntimeBool};
 use crate::memory::{MemoryVal, TypedArray};
-use crate::utils::map_trap::MapTrap;
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
@@ -24,13 +24,11 @@ impl<T: ResolverTarget> FuncResolver<T> for VerifySigResolver {
     }
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
-        let sig_ptr = args.nth_checked(0)?;
-        let pubkey_ptr = args.nth_checked(1)?;
-        let memory = target.memory();
-        let pubkey: TypedArray = memory.get_dyn_value(pubkey_ptr).map_trap()?;
-        let sig: TypedArray = memory.get_dyn_value(sig_ptr).map_trap()?;
-        let is_verified = verify_sig(sig.bytes(), pubkey.bytes());
-        Ok(Some(RuntimeValue::I32(if is_verified { 1 } else { 0 })))
+        let utils = ResolverUtils::new(target, args);
+        let signature: TypedArray = utils.mem_arg(0)?;
+        let pubkey: TypedArray = utils.mem_arg(1)?;
+        let is_verified = RuntimeBool::new(verify_sig(signature.bytes(), pubkey.bytes()));
+        Ok(Some(is_verified.into()))
     }
 
     fn gas(&self) -> u64 {
