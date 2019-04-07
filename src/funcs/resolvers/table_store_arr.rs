@@ -1,12 +1,11 @@
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::funcs_resolver::utils::ResolverUtils;
-use crate::memory::Utf16String;
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils};
+use crate::memory::Array;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct TableStoreUtf16Resolver;
+pub struct TableStoreArrayResolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for TableStoreUtf16Resolver {
+impl<T: ResolverTarget> FuncResolver<T> for TableStoreArrayResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
@@ -19,8 +18,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreUtf16Resolver {
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let utils = ResolverUtils::new(target, args);
-        let key: u32 = utils.arg(0)?;
-        let val: Utf16String = utils.mem_arg(1)?;
+        let key = utils.arg(0)?;
+        let val: Array = utils.mem_arg(1)?;
         utils.save(key, val)
     }
 
@@ -29,8 +28,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreUtf16Resolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for TableStoreUtf16Resolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for TableStoreArrayResolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(TableStoreUtf16Resolver {})
+        Box::new(TableStoreArrayResolver {})
     }
 }

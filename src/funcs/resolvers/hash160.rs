@@ -1,5 +1,4 @@
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::funcs_resolver::utils::ResolverUtils;
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils};
 use crate::memory::{MemoryVal, TypedArray};
 use alloc::prelude::*;
 use core::convert::TryInto;

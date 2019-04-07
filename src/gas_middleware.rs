@@ -1,4 +1,4 @@
-use super::funcs_resolver::{FuncsResolverBuilder, ResolverTarget};
+use super::funcs::{FuncsResolverBuilder, ResolverTarget};
 use alloc::prelude::*;
 use alloc::rc::Rc;
 use core::fmt;

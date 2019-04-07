@@ -7,6 +7,7 @@ mod utils;
 
 pub use builder::{FuncResolverBuild, FuncsResolverBuilder};
 pub use resolver::{FuncResolver, ResolverTarget};
+pub use utils::{ResolverUtils, RuntimeBool, RuntimePointer};
 
 use resolvers::*;
 
@@ -15,6 +16,7 @@ pub fn build_funcs_resolver<T: ResolverTarget>() -> Rc<FuncsResolverBuilder<T>> 
         FuncsResolverBuilder::<T>::new()
             .push("abort", AbortResolver::build())
             .push("compare", CompareResolver::build())
+            .push("epoch_time", EpochTimeResolver::build())
             .push("hash160", Hash160Resolver::build())
             .push("hex_decode_utf8", HexDecodeUtf8Resolver::build())
             .push("hex_decode_utf16", HexDecodeUtf16Resolver::build())
@@ -36,6 +38,7 @@ pub fn build_funcs_resolver<T: ResolverTarget>() -> Rc<FuncsResolverBuilder<T>> 
             )
             .push("table_store_utf16", TableStoreUtf16Resolver::build())
             .push("table_store_utf8", TableStoreUtf8Resolver::build())
+            .push("verify_multi_sig", VerifyMultiSigResolver::build())
             .push("verify_sig", VerifySigResolver::build()),
     )
 }

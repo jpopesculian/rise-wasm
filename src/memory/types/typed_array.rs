@@ -177,3 +177,9 @@ impl TryFrom<JsValue> for TypedArray {
         ))
     }
 }
+
+impl Into<Vec<u8>> for &TypedArray {
+    fn into(self) -> Vec<u8> {
+        self.vec()
+    }
+}

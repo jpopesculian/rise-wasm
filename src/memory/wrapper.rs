@@ -93,6 +93,12 @@ pub trait MemoryVal {
         self.len() * self.elem_size()
     }
     fn written_size(&self) -> usize;
+    fn chunks(&self) -> Vec<Vec<u8>> {
+        self.vec()
+            .chunks_exact(self.elem_size() as usize)
+            .map(|chunk| chunk.to_vec())
+            .collect()
+    }
 }
 
 pub trait DynLittleEndianConvert: MemoryVal + Sized {

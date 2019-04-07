@@ -1,12 +1,11 @@
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::funcs_resolver::utils::ResolverUtils;
-use crate::memory::TypedArray;
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils};
+use crate::memory::Utf8String;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct TableLoadTypedArrayResolver;
+pub struct TableLoadUtf8Resolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for TableLoadTypedArrayResolver {
+impl<T: ResolverTarget> FuncResolver<T> for TableLoadUtf8Resolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
@@ -18,7 +17,7 @@ impl<T: ResolverTarget> FuncResolver<T> for TableLoadTypedArrayResolver {
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let utils = ResolverUtils::new(target, args);
-        let val: TypedArray = utils.table_arg(0)?;
+        let val: Utf8String = utils.table_arg(0)?;
         Ok(Some(utils.send(val)?.into()))
     }
 
@@ -27,8 +26,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TableLoadTypedArrayResolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for TableLoadTypedArrayResolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for TableLoadUtf8Resolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(TableLoadTypedArrayResolver {})
+        Box::new(TableLoadUtf8Resolver {})
     }
 }

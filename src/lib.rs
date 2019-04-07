@@ -25,14 +25,16 @@ use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::*;
 use wasmi::{ImportsBuilder, ModuleInstance};
 
-mod funcs_resolver;
+mod funcs;
 mod gas_middleware;
+mod globals;
 mod imports;
 pub mod memory;
 pub mod utils;
 
-use funcs_resolver::build_funcs_resolver;
+use funcs::build_funcs_resolver;
 use gas_middleware::GasMiddleware;
+use globals::Globals;
 use imports::ImportResolver;
 use memory::{MemoryWrapper, Raw, TableStorage};
 use utils::js_buffer::JsBuffer;
@@ -49,7 +51,7 @@ cfg_if! {
 
 #[derive(Serialize, Deserialize)]
 pub struct Options {
-    name: String,
+    time: u64,
     args: Vec<JsBuffer>,
 }
 
@@ -60,6 +62,9 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
     // parse_options
     let options: Options = options.into_serde().expect("Failed to parse options");
 
+    // load and validate wasm
+    let module = wasmi::Module::from_buffer(&wasm_binary).expect("Failed to load wasm");
+
     // build memory
     let memory = MemoryWrapper::default();
     let table = TableStorage::default();
@@ -69,12 +74,18 @@ pub fn verify(wasm_binary: &[u8], options: &JsValue) {
             .unwrap();
     }
 
-    // load and validate wasm
-    let module = wasmi::Module::from_buffer(&wasm_binary).expect("Failed to load wasm");
+    // build globals
+    let globals = Globals::default()
+        .with_global("now", options.time);
 
     // build resolvers
     let resolvers = build_funcs_resolver::<ImportResolver>();
-    let mut externals = ImportResolver::new(resolvers.clone(), table.clone(), memory.clone());
+    let mut externals = ImportResolver::new(
+        resolvers.clone(),
+        table.clone(),
+        memory.clone(),
+        globals.clone(),
+    );
     let imports = ImportsBuilder::new().with_resolver("env", &externals);
 
     // build module instance

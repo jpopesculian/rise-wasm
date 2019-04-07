@@ -13,9 +13,9 @@ declare function mem_reset(): void;
 }
 
 @global export function __memory_free(ptr: usize): void {
-    return mem_free(ptr);
+    mem_free(ptr);
 }
 
 @global export function __memory_reset(): void {
-    return mem_reset();
+    mem_reset();
 }

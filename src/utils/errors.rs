@@ -1,5 +1,6 @@
 use alloc::prelude::*;
 use core::fmt;
+use core::iter;
 use core::ops::{Deref, DerefMut};
 use core::result::Result as CoreResult;
 use wasmi::{Error as WasmiError, HostError};
@@ -67,6 +68,27 @@ where
 {
     fn err_into(self) -> CoreResult<T, E2> {
         self.map_err(|error| error.into())
+    }
+}
+
+pub trait CollectResult<T, E> {
+    fn collect_result(self: Self) -> CoreResult<Vec<T>, E>;
+}
+
+impl<T, E, I> CollectResult<T, E> for I
+where
+    E: Error,
+    I: iter::Iterator<Item = CoreResult<T, E>>,
+{
+    fn collect_result(self: Self) -> CoreResult<Vec<T>, E> {
+        let mut result: Vec<T> = Vec::new();
+        for item in self {
+            match item {
+                Ok(item) => result.push(item),
+                Err(err) => return Err(err),
+            };
+        }
+        Ok(result)
     }
 }
 

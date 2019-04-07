@@ -1,5 +1,6 @@
 mod abort;
 mod compare;
+mod epoch_time;
 mod hash160;
 mod hex_decode_utf16;
 mod hex_decode_utf8;
@@ -18,12 +19,14 @@ mod table_store_mem;
 mod table_store_typed_arr;
 mod table_store_utf16;
 mod table_store_utf8;
+mod verify_multi_sig;
 mod verify_sig;
 
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils, RuntimeBool};
 
 pub use abort::AbortResolver;
 pub use compare::CompareResolver;
+pub use epoch_time::EpochTimeResolver;
 pub use hash160::Hash160Resolver;
 pub use hex_decode_utf16::HexDecodeUtf16Resolver;
 pub use hex_decode_utf8::HexDecodeUtf8Resolver;
@@ -42,4 +45,5 @@ pub use table_store_mem::TableStoreMemResolver;
 pub use table_store_typed_arr::TableStoreTypedArrayResolver;
 pub use table_store_utf16::TableStoreUtf16Resolver;
 pub use table_store_utf8::TableStoreUtf8Resolver;
+pub use verify_multi_sig::VerifyMultiSigResolver;
 pub use verify_sig::VerifySigResolver;

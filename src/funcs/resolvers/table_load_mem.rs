@@ -1,5 +1,5 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::utils::map_trap::MapTrap;
+use crate::utils::MapTrap;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 

@@ -1,17 +1,17 @@
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::funcs_resolver::utils::ResolverUtils;
-use crate::memory::Array;
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils};
+use crate::memory::Raw;
 use alloc::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct TableStoreArrayResolver;
+pub struct TableStoreMemResolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for TableStoreArrayResolver {
+impl<T: ResolverTarget> FuncResolver<T> for TableStoreMemResolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
                 ValueType::I32, // key
                 ValueType::I32, // offset
+                ValueType::I32, // size
             ][..],
             None,
         )
@@ -19,8 +19,10 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreArrayResolver {
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let utils = ResolverUtils::new(target, args);
-        let key = utils.arg(0)?;
-        let val: Array = utils.mem_arg(1)?;
+        let key: u32 = utils.arg(0)?;
+        let offset: u32 = utils.arg(1)?;
+        let size: u32 = utils.arg(2)?;
+        let val = Raw::default(target.memory().get(offset, size as usize)?);
         utils.save(key, val)
     }
 
@@ -29,8 +31,8 @@ impl<T: ResolverTarget> FuncResolver<T> for TableStoreArrayResolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for TableStoreArrayResolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for TableStoreMemResolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(TableStoreArrayResolver {})
+        Box::new(TableStoreMemResolver {})
     }
 }

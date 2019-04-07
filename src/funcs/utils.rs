@@ -1,8 +1,10 @@
 use super::resolver::ResolverTarget;
 use crate::memory::{
-    AllocatorRef, DynLittleEndianConvert, MemoryVal, MemoryWrapper, StorageVal, TableStorage,
+    AllocatorRef, Array, DynLittleEndianConvert, MemoryVal, MemoryWrapper, StorageVal, TableStorage,
 };
-use crate::utils::map_trap::MapTrap;
+use crate::utils::{CollectResult, ErrInto, MapTrap};
+use alloc::prelude::*;
+use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryFrom;
 use wasmi::{FromRuntimeValue, HostError, RuntimeArgs, RuntimeValue, Trap};
 
@@ -29,6 +31,16 @@ impl<'a> ResolverUtils<'a> {
 
     pub fn mem_arg<T: DynLittleEndianConvert>(&self, idx: usize) -> Result<T, Trap> {
         self.memory.get_dyn_value::<T>(self.arg(idx)?).map_trap()
+    }
+
+    pub fn multi_mem_arg<T: DynLittleEndianConvert>(&self, idx: usize) -> Result<Vec<T>, Trap> {
+        self.mem_arg::<Array>(idx)?
+            .chunks()
+            .iter()
+            .map(|bytes| LittleEndian::read_u32(bytes))
+            .map(|ptr| self.memory.get_dyn_value::<T>(ptr))
+            .collect_result()
+            .err_into()
     }
 
     pub fn table_arg<T>(&self, idx: usize) -> Result<T, Trap>

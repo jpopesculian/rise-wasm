@@ -1,6 +1,7 @@
 const fs = require("fs");
 const bip39 = require("bip39");
 const { bip32, crypto } = require("bitcoinjs-lib");
+const epochTime = new Date("2016-05-24T17:00:00.000Z");
 
 console.log("-> Started!");
 
@@ -21,7 +22,7 @@ const { verify } = require("../../pkg/rise_wasm");
 
 try {
   verify(wasmBin, {
-    name: "main",
+    time: Math.trunc((new Date().getTime() - epochTime.getTime()) / 1000),
     args: [sig, wallet.publicKey]
   });
   console.log("-> Success!");

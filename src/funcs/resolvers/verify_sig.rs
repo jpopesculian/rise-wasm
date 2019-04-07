@@ -1,5 +1,4 @@
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::funcs_resolver::utils::{ResolverUtils, RuntimeBool};
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils, RuntimeBool};
 use crate::memory::{MemoryVal, TypedArray};
 use alloc::prelude::Box;
 use wasm_bindgen::prelude::*;

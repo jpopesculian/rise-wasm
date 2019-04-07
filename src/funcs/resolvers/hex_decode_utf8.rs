@@ -1,14 +1,13 @@
-use super::{FuncResolver, FuncResolverBuild, ResolverTarget};
-use crate::funcs_resolver::utils::ResolverUtils;
-use crate::memory::{TypedArray, Utf16String};
-use crate::utils::map_trap::MapTrap;
+use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils};
+use crate::memory::{TypedArray, Utf8String};
+use crate::utils::MapTrap;
 use alloc::prelude::*;
 use hex;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 
-pub struct HexDecodeUtf16Resolver;
+pub struct HexDecodeUtf8Resolver;
 
-impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf16Resolver {
+impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf8Resolver {
     fn signature(&self, _: &Signature) -> Signature {
         Signature::new(
             &[
@@ -20,7 +19,7 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf16Resolver {
 
     fn run(&self, target: &mut T, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         let utils = ResolverUtils::new(target, args);
-        let val: Utf16String = utils.mem_arg(0)?;
+        let val: Utf8String = utils.mem_arg(0)?;
         let decoded = TypedArray::default(hex::decode(val.string()?).map_trap()?);
         Ok(Some(utils.send(decoded)?.into()))
     }
@@ -30,8 +29,8 @@ impl<T: ResolverTarget> FuncResolver<T> for HexDecodeUtf16Resolver {
     }
 }
 
-impl<T: ResolverTarget> FuncResolverBuild<T> for HexDecodeUtf16Resolver {
+impl<T: ResolverTarget> FuncResolverBuild<T> for HexDecodeUtf8Resolver {
     fn build() -> Box<dyn FuncResolver<T>> {
-        Box::new(HexDecodeUtf16Resolver {})
+        Box::new(HexDecodeUtf8Resolver {})
     }
 }
