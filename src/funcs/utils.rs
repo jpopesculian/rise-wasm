@@ -71,6 +71,7 @@ impl<'a> ResolverUtils<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct RuntimePointer(u32);
 
 impl RuntimePointer {
@@ -95,6 +96,7 @@ impl From<RuntimePointer> for RuntimeValue {
     }
 }
 
+#[derive(Debug)]
 pub struct RuntimeBool(bool);
 
 impl RuntimeBool {

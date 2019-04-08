@@ -1,8 +1,7 @@
 use super::{FuncResolver, FuncResolverBuild, ResolverTarget, ResolverUtils, RuntimeBool};
-use crate::memory::{Array, MemoryVal, TypedArray};
-use crate::utils::{CollectResult, JsBuffer, MapTrap, RuntimeError};
+use crate::memory::TypedArray;
+use crate::utils::{JsBuffer, MapTrap};
 use alloc::prelude::*;
-use byteorder::{ByteOrder, LittleEndian};
 use wasm_bindgen::prelude::*;
 use wasmi::{RuntimeArgs, RuntimeValue, Signature, Trap, ValueType};
 

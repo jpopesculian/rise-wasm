@@ -133,6 +133,7 @@ fn largest_order(n: u32) -> u8 {
 struct NodeRef(Rc<RefCell<Node>>);
 
 struct Node {
+    // @TODO get rid of prev
     pub next: Option<NodeRef>,
     pub prev: Option<NodeRef>,
     pub buddies: HashMap<u8, NodeRef>,
@@ -266,9 +267,12 @@ impl NodeRef {
         let buddy_id = self.get_id() | 1 << (self.max_order() - new_order);
         let buddy = NodeRef::new(new_order, self.max_order());
 
-        buddy.set_next(self.next());
         buddy.set_id(buddy_id);
 
+        buddy.set_next(self.next());
+        if let Some(next) = self.next() {
+            next.set_prev(Some(buddy.clone()));
+        }
         self.set_next(Some(buddy.clone()));
         buddy.set_prev(Some(self.clone()));
 
